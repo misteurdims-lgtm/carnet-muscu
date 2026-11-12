@@ -299,6 +299,7 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 </section>
 </div>
 <div id="tab-def" hidden>
+<section class="card" id="friendscard"><h2>👥 Amis</h2><div id="fr"></div></section>
 <section class="card"><div class="lvl"><div id="pav"></div><div style="flex:1;min-width:0"><b id="lvt">Débutant</b><div class="st" id="lvp"></div><div class="xpbar"><i id="lvb" style="width:0"></i></div></div></div><div id="gift"></div><button type="button" id="chest" style="width:100%;margin-top:12px"></button></section>
 <section class="card"><h2>Défis de la semaine</h2><div id="wk"></div><div class="tip" id="wtip"></div></section>
 <section class="card"><h2>Jeux</h2>
@@ -560,7 +561,7 @@ function renderTimer(){
   drawTimer();
 }
 const catOf=s=>s.cat||Object.keys(PRESETS).find(g=>PRESETS[g].some(p=>key(p)===key(s.ex)))||'';
-function showTab(t){if(RUN&&(t==='run'||t==='bike'))t=RUN.m;curTab=t;$('#tab-log').hidden=t!=='log';$('#tab-timer').hidden=t!=='timer';$('#tab-def').hidden=t!=='def';$('#tab-run').hidden=!(t==='run'||t==='bike');$('#tab-hist').hidden=t!=='hist';[['#t1','log'],['#t3','timer'],['#t4','def'],['#t5','run'],['#t6','bike'],['#t2','hist']].forEach(([s,k])=>$(s).classList.toggle('on',t===k));window.scrollTo(0,0);drawTimer();if(t==='run'||t==='bike'){RM=t;applyMode();renderRun()}}
+function showTab(t){if(RUN&&(t==='run'||t==='bike'))t=RUN.m;curTab=t;$('#tab-log').hidden=t!=='log';$('#tab-timer').hidden=t!=='timer';$('#tab-def').hidden=t!=='def';$('#tab-run').hidden=!(t==='run'||t==='bike');$('#tab-hist').hidden=t!=='hist';[['#t1','log'],['#t3','timer'],['#t4','def'],['#t5','run'],['#t6','bike'],['#t2','hist']].forEach(([s,k])=>$(s).classList.toggle('on',t===k));window.scrollTo(0,0);drawTimer();if(t==='run'||t==='bike'){RM=t;applyMode();renderRun()}if(t==='def'&&window.friendsOpen)friendsOpen()}
 function arm(b,label,fn){
   if(b.dataset.armed){fn();return}
   b.dataset.armed='1';const t=b.textContent;b.textContent=label;b.classList.add('arm');
@@ -1491,13 +1492,14 @@ const HELP={
  sauv:['Sauvegarde','Une copie de toutes tes données. Garde-la au cas où tu changes de téléphone.'],
  restaure:['Restaurer','Remets ici une sauvegarde faite avant. Elle remplace tes données actuelles.'],
  montre:['Import montre','Ta montre enregistre ton activité. Exporte-la en fichier GPX ou TCX depuis son app, puis choisis le fichier ici : la distance, la durée et le tracé sont repris tels quels et font avancer ta carte.'],
+ amis:['Amis','Ajoute un ami avec son code, compare vos points, séances et kilomètres de la semaine, et envoyez-vous des encouragements. Tu ne partages que ton pseudo, ton avatar et tes totaux, pas tes photos ni ton historique détaillé.'],
  tonnage:['Kilos soulevés','Le total soulevé ce jour-là : charge × répétitions, tout additionné.']};
 const HELPS=[
  ['#progcard h2',0,'prog'],['#tab-log h2',/Nouvelle série/,'serie'],['.rsel > label',/Temps de repos/,'repos'],['label.sw',/Lancer le repos/,'autorepos'],['#rpew label',0,'rpe'],
  ['#tip .tip',0,el=>/Plateau/.test(el.textContent)?'plateau':'surcharge'],['#tip summary',0,'echauf'],['#tip .st',/1RM/,'rm'],['#htitle',0,'progres'],['#hlvl',0,'niveau',1],
  ['#tab-timer h2',/^Chrono/,'chrono'],['#pint > label',/Programmes/,'tabata'],
  ['#tab-def h2',/Défis de la semaine/,'defisem'],['#tab-def h2',/^Jeux/,'jeux'],['#tab-def h2',/Paris/,'paris'],['#lvp',0,'pts'],['#chest',0,'coffre',1],['#wtip b',0,'defjour'],
- ['#rh',0,'gps'],['#rl2',0,el=>/Allure/.test(el.textContent)?'allure':'vitmoy'],['#rl3',0,el=>/max/i.test(el.textContent)?'vitmax':'kmh'],['#rmh',0,()=>RM==='bike'?'carteTour':'carte'],['#rwh',0,'defisrun'],['#tab-run h2',/Séance en salle/,'salle'],['#tab-run h2',/Importer depuis/,'montre'],['#jinfo .chips',0,'tour'],
+ ['#rh',0,'gps'],['#rl2',0,el=>/Allure/.test(el.textContent)?'allure':'vitmoy'],['#rl3',0,el=>/max/i.test(el.textContent)?'vitmax':'kmh'],['#rmh',0,()=>RM==='bike'?'carteTour':'carte'],['#rwh',0,'defisrun'],['#tab-run h2',/Séance en salle/,'salle'],['#friendscard h2',0,'amis'],['#tab-run h2',/Importer depuis/,'montre'],['#jinfo .chips',0,'tour'],
  ['#volcard h2',0,'volume'],['#bwcard h2',0,'poids'],['#tab-hist h2',/Mes données/,'sauv'],['#tab-hist summary',/Restaurer/,'restaure'],['#hl > .day:first-child h3',0,'tonnage'],
  ['#ovt',0,el=>/Photo/.test(el.textContent)?'photo':/Coffre/.test(el.textContent)?'coffre':/niveau|Bienvenue/i.test(el.textContent)?'niveau':null]];
 function addHelp(){HELPS.forEach(([sel,rx,key,after])=>{document.querySelectorAll(sel).forEach(el=>{if(rx&&!rx.test(el.textContent))return;const k=typeof key==='function'?key(el):key;if(!k||!HELP[k])return;
@@ -1548,7 +1550,7 @@ async function fbInit(){
   try{const B='https://www.gstatic.com/firebasejs/10.12.2/';await loadScript(B+'firebase-app-compat.js');await loadScript(B+'firebase-auth-compat.js');await loadScript(B+'firebase-firestore-compat.js');
     firebase.initializeApp(ACFG.firebase);FB={auth:firebase.auth(),db:firebase.firestore()};
     FB.auth.getRedirectResult().catch(e=>acctMsg('Connexion impossible : '+(e.message||e.code)));
-    FB.auth.onAuthStateChanged(u=>{CU=u;renderAcct();if(u)cloudPull()})}
+    FB.auth.onAuthStateChanged(u=>{CU=u;FD.me=null;FD.t=0;renderAcct();if(u)cloudPull();if(typeof friendsOpen==='function')friendsOpen(true)})}
   catch(e){acctMsg('Service de connexion indisponible (réseau ?). L’app continue de fonctionner sans compte.');renderAcct()}}
 function renderAcct(){const b=$('#hacct');if(!b)return;b.textContent=CU?'☁ '+(CU.displayName||CU.email||'Connecté').split(' ')[0]:'☁ Se connecter';if($('#ovt').textContent==='Mon compte'&&!$('#ov').hidden)acctOverlay()}
 function mkProvider(k){if(k==='google')return new firebase.auth.GoogleAuthProvider();if(k==='facebook')return new firebase.auth.FacebookAuthProvider();const p=new firebase.auth.OAuthProvider('apple.com');p.addScope('email');p.addScope('name');return p}
@@ -1561,10 +1563,19 @@ function acctOverlay(){
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
-  else body=`<p>Connecte-toi pour retrouver tes séances sur tous tes appareils. Sans compte, tout reste utilisable.</p><button type="button" class="lvopt" data-sp="apple"><b>  Continuer avec Apple</b></button><button type="button" class="lvopt" data-sp="google"><b>🟢 Continuer avec Google (Android)</b></button><button type="button" class="lvopt" data-sp="facebook"><b>🔵 Continuer avec Facebook</b></button>`;
+  else body=`<p>Connecte-toi pour retrouver tes séances sur tous tes appareils. Sans compte, tout reste utilisable.</p><button type="button" class="lvopt" data-sp="apple"><b>  Continuer avec Apple</b></button><button type="button" class="lvopt" data-sp="google"><b>🟢 Continuer avec Google (Android)</b></button><button type="button" class="lvopt" data-sp="facebook"><b>🔵 Continuer avec Facebook</b></button><h3 class="cs">…ou avec une adresse e-mail</h3><label for="apn">Pseudo (pour créer un compte)</label><input id="apn" maxlength="18" autocomplete="nickname"><label for="aem" style="margin-top:8px">E-mail</label><input id="aem" type="email" autocomplete="email" inputmode="email"><label for="apw" style="margin-top:8px">Mot de passe (6 caractères minimum)</label><input id="apw" type="password" autocomplete="current-password"><button type="button" class="p" id="ain" style="width:100%;margin-top:10px">Se connecter</button><button type="button" id="aup" style="width:100%;margin-top:8px">Créer mon compte</button><button type="button" id="afg" style="width:100%;margin-top:8px">Mot de passe oublié</button>`;
   openOv('Mon compte',`<div class="card">${note}${body}</div>`);
-  document.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>signIn(b.dataset.sp));if($('#aout'))$('#aout').onclick=()=>{FB.auth.signOut();try{localStorage.removeItem('carnet-link')}catch(e){}closeOv()}}
+  document.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>signIn(b.dataset.sp));if($('#ain')){$('#ain').onclick=()=>emailAuth('in');$('#aup').onclick=()=>emailAuth('up');$('#afg').onclick=()=>emailAuth('fg')}
+  if($('#aout'))$('#aout').onclick=()=>{FB.auth.signOut();try{localStorage.removeItem('carnet-link')}catch(e){}closeOv()}}
 let CS='';
+const AERR={'auth/email-already-in-use':'Cet e-mail a déjà un compte : utilise « Se connecter ».','auth/invalid-email':'Adresse e-mail invalide.','auth/weak-password':'Mot de passe trop court (6 caractères minimum).','auth/invalid-credential':'E-mail ou mot de passe incorrect.','auth/wrong-password':'E-mail ou mot de passe incorrect.','auth/user-not-found':'Aucun compte avec cet e-mail.','auth/too-many-requests':'Trop d’essais, patiente un peu.','auth/network-request-failed':'Pas de connexion internet.'};
+async function emailAuth(m){
+  if(!FB){acctMsg('La connexion n’est pas encore configurée.');return}
+  const em=($('#aem').value||'').trim(),pw=$('#apw').value||'',pn=($('#apn').value||'').trim();
+  try{if(m==='fg'){if(!em){acctMsg('Écris ton e-mail puis touche « Mot de passe oublié ».');return}await FB.auth.sendPasswordResetEmail(em);acctMsg('E-mail de réinitialisation envoyé.');return}
+    if(m==='up'){if(!pn){acctMsg('Choisis un pseudo pour créer ton compte.');return}const cr=await FB.auth.createUserWithEmailAndPassword(em,pw);try{await cr.user.updateProfile({displayName:pn})}catch(e){}CU=FB.auth.currentUser||cr.user;FD.me=null;renderAcct();cloudPull()}
+    else await FB.auth.signInWithEmailAndPassword(em,pw)}
+  catch(e){acctMsg(AERR[e&&e.code]||'Connexion impossible : '+((e&&e.message)||e))}}
 function cleanForCloud(){const o=JSON.parse(JSON.stringify(S));const rs=o.runs.slice().sort((a,b)=>b.id-a.id);o.runs.forEach(r=>{delete r.ph});rs.slice(30).forEach(r=>{const x=o.runs.find(q=>q.id===r.id);if(x)x.route=[]});return o}
 function mergeS(a,b){
   const o=Object.assign({},b,a);
@@ -1582,7 +1593,61 @@ async function cloudPull(){
     else if((d.ts||0)>(S.ts||0)){const keepPh=S.runs.filter(r=>r.ph);S=cloud;norm();keepPh.forEach(r=>{const x=S.runs.find(q=>q.id===r.id);if(x)x.ph=r.ph});try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}render();CS='☁ Données mises à jour depuis ton autre appareil.'}
     else await cloudPush();
     if($('#ovt').textContent==='Mon compte'&&!$('#ov').hidden)acctOverlay()}catch(e){CS='Synchronisation impossible pour l’instant.'}}
-window.cloudSave=()=>{if(!FB||!CU)return;clearTimeout(cloudT);cloudT=setTimeout(cloudPush,1500)};
+window.cloudSave=()=>{if(!FB||!CU)return;clearTimeout(cloudT);cloudT=setTimeout(()=>{cloudPush();pushStats()},1500)};
+/* ---------- amis : profil, code ami, classement, encouragements ---------- */
+const FD={me:null,circle:[],reqs:[],cheers:[],sort:'pts',msg:'',t:0,busy:false};
+const genCode=()=>{const a='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];return c};
+function myStats(){const w0=wkStart(),ws=S.sessions.filter(s=>s.date>=w0),eq=equipped(gifts()),c=cnt(),km=v=>S.runs.filter(r=>!!r.v===v&&r.date>=w0).reduce((a,r)=>a+r.dist,0)/1000;
+  return{name:FD.me?FD.me.name:'',avatar:eq.a.i,frame:eq.f.gr,grade:eq.g.n,pts:c.pts,lvl:c.lvl,wd:new Set(ws.map(s=>s.date)).size,ws:ws.reduce((a,s)=>a+s.sets.length,0),wr:Math.round(km(false)*10)/10,wb:Math.round(km(true)*10)/10,tr:Math.round(totalKm()),tb:Math.round(bikeKm()),ts:Date.now()}}
+async function pushStats(){if(!FB||!CU||!FD.me)return;try{await FB.db.doc('stats/'+CU.uid).set(myStats())}catch(e){}}
+async function ensureProfile(){
+  if(FD.me)return;const ref=FB.db.doc('profiles/'+CU.uid),s=await ref.get();if(s.exists){FD.me=s.data();return}
+  const name=(CU.displayName||CU.email||'Sportif').split(/[ @]/)[0].slice(0,18)||'Sportif';let code='';
+  for(let k=0;k<8;k++){code=genCode();const c=await FB.db.doc('codes/'+code).get();if(!c.exists)break}
+  await FB.db.doc('codes/'+code).set({uid:CU.uid});FD.me={name,code};await ref.set(FD.me)}
+async function friendsOpen(force){
+  const box=$('#fr');if(!box)return;
+  if(!fbReady()){box.innerHTML='<p class="st">Les amis demandent un compte. La connexion n’est pas encore activée dans cette installation (voir AUTH-SETUP.md).</p>';return}
+  if(!CU){box.innerHTML='<p>Connecte-toi pour ajouter des amis, comparer vos progrès et vous encourager.</p><button type="button" class="p" id="frlogin" style="width:100%">☁ Créer un compte / Se connecter</button>';$('#frlogin').onclick=acctOverlay;return}
+  if(FD.busy||(!force&&Date.now()-FD.t<20000&&FD.me)){renderFriends();return}
+  FD.busy=true;box.innerHTML='<p class="st">Chargement de tes amis…</p>';
+  try{await ensureProfile();await pushStats();const uid=CU.uid,L=async p=>(await FB.db.collection(p).get()).docs.map(d=>Object.assign({id:d.id},d.data()));
+    for(const o of await L('out/'+uid+'/to')){const a=await FB.db.doc('friends/'+o.id+'/with/'+uid).get();if(a.exists){await FB.db.doc('circle/'+uid+'/m/'+o.id).set({ts:Date.now()});await FB.db.doc('out/'+uid+'/to/'+o.id).delete()}}
+    FD.circle=[];for(const m of await L('circle/'+uid+'/m')){try{const p=await FB.db.doc('profiles/'+m.id).get(),s=await FB.db.doc('stats/'+m.id).get();if(!p.exists||!s.exists)throw 0;FD.circle.push({id:m.id,p:p.data(),s:s.data()})}catch(e){try{await FB.db.doc('circle/'+uid+'/m/'+m.id).delete()}catch(x){}}}
+    FD.reqs=await L('requests/'+uid+'/from');FD.cheers=(await L('cheers/'+uid+'/from')).sort((a,b)=>b.ts-a.ts).slice(0,6);FD.t=Date.now()}
+  catch(e){FD.msg='Chargement impossible pour l’instant. Réessaie dans un moment.'}
+  FD.busy=false;renderFriends()}
+function renderFriends(){
+  const box=$('#fr');if(!box||!CU||!FD.me)return;const me=Object.assign({id:CU.uid,p:FD.me,s:myStats(),me:1}),all=FD.circle.concat([me]);
+  const M={pts:['Points',x=>x.pts,''],wd:['Séances (semaine)',x=>x.wd,''],wr:['Course (km, semaine)',x=>x.wr,' km'],wb:['Vélo (km, semaine)',x=>x.wb,' km']},f=M[FD.sort][1];
+  all.sort((a,b)=>f(b.s)-f(a.s));const medal=['🥇','🥈','🥉'];
+  box.innerHTML=`<div class="tip"><b>Ton code ami : ${esc(FD.me.code)}</b><br><span class="st">Donne-le à tes amis pour qu’ils t’ajoutent.</span><br><button type="button" id="frshare">Partager mon code</button></div>
+  <label for="frcode" style="margin-top:10px">Ajouter un ami avec son code</label><div class="pair"><div><input id="frcode" maxlength="6" placeholder="ABC123" autocapitalize="characters" autocomplete="off"></div><div><button type="button" class="p" id="fradd" style="width:100%">Envoyer la demande</button></div></div>
+  <div class="st" id="frmsg" role="status">${esc(FD.msg)}</div>
+  ${FD.reqs.length?'<h3 class="cs">Demandes reçues</h3>'+FD.reqs.map(q=>`<div class="run"><b>${esc(q.avatar||'🙂')} ${esc(q.name||'Ami')}</b> veut devenir ton ami.<br><button type="button" class="p" data-ac="${esc(q.id)}">Accepter</button><button type="button" class="dl" data-rf="${esc(q.id)}">Refuser</button></div>`).join(''):''}
+  ${FD.cheers.length?'<h3 class="cs">Encouragements</h3>'+FD.cheers.map(c=>`<div class="st">${esc(c.emoji||'👏')} <b>${esc(c.name||'Un ami')}</b> t’encourage !</div>`).join('')+'<button type="button" id="frclr" style="min-height:34px;font-size:13px;margin-top:6px">Effacer</button>':''}
+  <h3 class="cs">Classement entre amis</h3><div class="chips">${Object.keys(M).map(k=>`<button type="button" class="${FD.sort===k?'on':''}" data-so="${k}">${M[k][0]}</button>`).join('')}</div>
+  ${all.map((x,i)=>`<div class="run" style="border-left-color:${x.me?'var(--ac)':'#98a2b3'}"><b>${medal[i]||(i+1)+'.'} ${esc(x.s.avatar||'🙂')} ${esc(x.p.name||'Ami')}${x.me?' (toi)':''}</b> · ${fmt(M[FD.sort][1](x.s))}${M[FD.sort][2]}<small>${esc(x.s.grade||'')} · niveau ${esc(x.s.lvl||1)} · ${fmt(x.s.pts||0)} pts</small>${x.me?'':`<button type="button" data-ch="${esc(x.id)}">👏 Encourager</button><button type="button" class="dl" data-rm="${esc(x.id)}">Retirer</button>`}</div>`).join('')}
+  ${FD.circle.length?'':'<p class="st">Ajoute ton premier ami avec son code pour lancer le classement.</p>'}<button type="button" id="frref" style="width:100%;margin-top:8px">↻ Actualiser</button>`;
+  $('#frshare').onclick=async()=>{const t='Rejoins-moi sur Carnet de muscu ! Mon code ami : '+FD.me.code;try{if(navigator.share)await navigator.share({text:t});else{await navigator.clipboard.writeText(t);FD.msg='Code copié.';renderFriends()}}catch(e){}};
+  $('#fradd').onclick=()=>sendReq($('#frcode').value);$('#frref').onclick=()=>friendsOpen(true);
+  box.querySelectorAll('[data-so]').forEach(b=>b.onclick=()=>{FD.sort=b.dataset.so;renderFriends()});
+  box.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>acceptReq(b.dataset.ac));box.querySelectorAll('[data-rf]').forEach(b=>b.onclick=()=>refuseReq(b.dataset.rf));
+  box.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>cheer(b.dataset.ch,b));box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>arm(b,'Retirer cet ami ?',()=>removeFriend(b.dataset.rm)));
+  if($('#frclr'))$('#frclr').onclick=async()=>{for(const c of FD.cheers)try{await FB.db.doc('cheers/'+CU.uid+'/from/'+c.id).delete()}catch(e){}FD.cheers=[];renderFriends()}}
+async function sendReq(raw){
+  const code=String(raw||'').trim().toUpperCase();if(code.length!==6){FD.msg='Le code ami fait 6 caractères.';renderFriends();return}
+  try{const c=await FB.db.doc('codes/'+code).get();if(!c.exists){FD.msg='Code introuvable. Vérifie-le avec ton ami.';renderFriends();return}
+    const x=c.data().uid;if(x===CU.uid){FD.msg='C’est ton propre code 🙂';renderFriends();return}
+    if(FD.circle.some(f=>f.id===x)){FD.msg='Vous êtes déjà amis.';renderFriends();return}
+    await FB.db.doc('friends/'+CU.uid+'/with/'+x).set({ts:Date.now()});const st=myStats();
+    await FB.db.doc('requests/'+x+'/from/'+CU.uid).set({name:FD.me.name,avatar:st.avatar,ts:Date.now()});await FB.db.doc('out/'+CU.uid+'/to/'+x).set({ts:Date.now()});
+    FD.msg='Demande envoyée. Ton ami la verra en ouvrant l’onglet Défis.'}catch(e){FD.msg='Envoi impossible pour l’instant.'}renderFriends()}
+async function acceptReq(id){try{await FB.db.doc('friends/'+CU.uid+'/with/'+id).set({ts:Date.now()});await FB.db.doc('circle/'+CU.uid+'/m/'+id).set({ts:Date.now()});await FB.db.doc('requests/'+CU.uid+'/from/'+id).delete();FD.msg='Ami ajouté !'}catch(e){FD.msg='Action impossible pour l’instant.'}friendsOpen(true)}
+async function refuseReq(id){try{await FB.db.doc('requests/'+CU.uid+'/from/'+id).delete();await FB.db.doc('friends/'+id+'/with/'+CU.uid).delete()}catch(e){}friendsOpen(true)}
+async function removeFriend(id){try{await FB.db.doc('friends/'+CU.uid+'/with/'+id).delete();await FB.db.doc('circle/'+CU.uid+'/m/'+id).delete();await FB.db.doc('friends/'+id+'/with/'+CU.uid).delete()}catch(e){}friendsOpen(true)}
+async function cheer(id,b){try{await FB.db.doc('cheers/'+id+'/from/'+CU.uid+'_'+today()).set({from:CU.uid,name:FD.me.name,emoji:['👏','🔥','💪'][Math.floor(Math.random()*3)],ts:Date.now()});b.textContent='✓ Envoyé';b.disabled=true}catch(e){b.textContent='Impossible'}}
+
 $('#hacct').onclick=acctOverlay;fbInit();
 render();pick('');
 init();
