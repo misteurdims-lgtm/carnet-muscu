@@ -1,5 +1,7 @@
 /* Configuration de la connexion par compte et des amis (Firebase). Voir AUTH-SETUP.md. */
 window.APP_CONFIG = {
+  /* Boutons de connexion affichés (l'e-mail est toujours là). Passe à true une fois le fournisseur activé dans Firebase. */
+  providers: { apple: true, google: false, facebook: false },
   firebase: {
     apiKey: "AIzaSyBLwE1stnJtj7sCtBydn_OnD3QUQlQjorc",
     authDomain: "carnet-muscu-9bff5.firebaseapp.com",
