@@ -246,7 +246,7 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 <main>
 <header class="hero"><button type="button" id="havatar" aria-label="Mon compte"></button><div class="hrow"><div><h1>Carnet de muscu</h1>
 <p>Note tes charges, bats ton record à la séance suivante.</p></div><button type="button" class="avbtn" id="hav" aria-label="Mon profil et mes récompenses"></button></div><div class="stats" id="stats"></div><button type="button" class="lvlb" id="hlvl"></button> <button type="button" class="lvlb" id="hacct">☁ Se connecter</button></header>
-<nav class="tabs"><button type="button" id="t1" class="on">Séance</button><button type="button" id="t3">Chrono</button><button type="button" id="t4">Défis</button><button type="button" id="t5">Footing</button><button type="button" id="t6">Vélo</button><button type="button" id="t2">Historique</button></nav>
+<nav class="tabs"><button type="button" id="t1" class="on">Séance</button><button type="button" id="t3">Chrono</button><button type="button" id="t4">Défis</button><button type="button" id="t5">Footing</button><button type="button" id="t6">Vélo</button></nav>
 <div id="tab-log">
 <section class="card" id="progcard"><h2>Ma séance</h2><div id="guide"></div><div class="chips" id="progchips"></div><div id="proglist"></div></section>
 <div class="rest" id="rest" hidden role="timer"><div class="rtop"><span id="rlab">Repos en cours</span><span id="rnext"></span></div><div class="rbig" id="rbig">1:30</div><div class="bar"><i id="rbar"></i></div><div class="rbtn"><button type="button" id="rm">−15 s</button><button type="button" class="p" id="rgo">▶ Commencer la série 2</button><button type="button" id="rp">+15 s</button></div></div>
@@ -278,6 +278,11 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 <div id="chart"></div>
 <div id="hist"></div>
 </section>
+
+<section class="card" id="volcard" hidden></section><section class="card" id="bwcard" hidden></section>
+<section class="card"><h2>Séances précédentes</h2><div class="chips" id="hf"></div><div id="hl" style="margin-top:14px"></div>
+<div id="hclr"></div></section>
+<section class="card"><h2>Mes données</h2><p class="st">Sauvegarde ton carnet (séances, sorties, défis, poids) dans un fichier, ou restaure-le sur un autre appareil.</p><button type="button" id="exp" style="width:100%">⬇ Exporter ma sauvegarde</button><details style="margin-top:10px"><summary>Restaurer une sauvegarde</summary><input type="file" id="impf" accept="application/json,.json" style="margin-top:8px"><textarea id="imp" rows="3" placeholder="…ou colle ici le texte de ta sauvegarde" style="width:100%;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:8px;font-size:14px;background:var(--card);color:var(--ink)"></textarea><button type="button" class="dl" id="impgo" style="width:100%;margin-top:8px">Restaurer</button></details><div class="st" id="dmsg" role="status"></div></section>
 </div>
 <div id="tab-timer" hidden>
 <section class="card">
@@ -331,12 +336,6 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 <div class="pair" style="margin-top:8px"><div><label for="mkm">Distance (km)</label><input id="mkm" inputmode="decimal" placeholder="5,2"></div><div><label for="mmin">Durée (min)</label><input id="mmin" inputmode="decimal" placeholder="32"></div></div>
 <button type="button" class="p" id="madd" style="width:100%;margin-top:10px">📷 Photographier l’écran et valider</button><div class="st" id="mmsg" role="status"></div></section>
 <section class="card"><h2>Mes sorties</h2><div id="rlist"></div><div id="rclr"></div></section>
-</div>
-<div id="tab-hist" hidden>
-<section class="card" id="volcard" hidden></section><section class="card" id="bwcard" hidden></section>
-<section class="card"><h2>Séances précédentes</h2><div class="chips" id="hf"></div><div id="hl" style="margin-top:14px"></div>
-<div id="hclr"></div></section>
-<section class="card"><h2>Mes données</h2><p class="st">Sauvegarde ton carnet (séances, sorties, défis, poids) dans un fichier, ou restaure-le sur un autre appareil.</p><button type="button" id="exp" style="width:100%">⬇ Exporter ma sauvegarde</button><details style="margin-top:10px"><summary>Restaurer une sauvegarde</summary><input type="file" id="impf" accept="application/json,.json" style="margin-top:8px"><textarea id="imp" rows="3" placeholder="…ou colle ici le texte de ta sauvegarde" style="width:100%;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:8px;font-size:14px;background:var(--card);color:var(--ink)"></textarea><button type="button" class="dl" id="impgo" style="width:100%;margin-top:8px">Restaurer</button></details><div class="st" id="dmsg" role="status"></div></section>
 </div>
 <div class="st" id="sync"></div>
 </main>
@@ -564,7 +563,7 @@ function renderTimer(){
   drawTimer();
 }
 const catOf=s=>s.cat||Object.keys(PRESETS).find(g=>PRESETS[g].some(p=>key(p)===key(s.ex)))||'';
-function showTab(t){if(RUN&&(t==='run'||t==='bike'))t=RUN.m;curTab=t;$('#tab-log').hidden=t!=='log';$('#tab-timer').hidden=t!=='timer';$('#tab-def').hidden=t!=='def';$('#tab-run').hidden=!(t==='run'||t==='bike');$('#tab-hist').hidden=t!=='hist';[['#t1','log'],['#t3','timer'],['#t4','def'],['#t5','run'],['#t6','bike'],['#t2','hist']].forEach(([s,k])=>$(s).classList.toggle('on',t===k));window.scrollTo(0,0);drawTimer();if(t==='run'||t==='bike'){RM=t;applyMode();renderRun()}if(t==='def'&&window.friendsOpen)friendsOpen()}
+function showTab(t){if(t==='hist')t='log';if(RUN&&(t==='run'||t==='bike'))t=RUN.m;curTab=t;$('#tab-log').hidden=t!=='log';$('#tab-timer').hidden=t!=='timer';$('#tab-def').hidden=t!=='def';$('#tab-run').hidden=!(t==='run'||t==='bike');[['#t1','log'],['#t3','timer'],['#t4','def'],['#t5','run'],['#t6','bike']].forEach(([s,k])=>$(s).classList.toggle('on',t===k));window.scrollTo(0,0);drawTimer();if(t==='run'||t==='bike'){RM=t;applyMode();renderRun()}if(t==='def'&&window.friendsOpen)friendsOpen()}
 function arm(b,label,fn){
   if(b.dataset.armed){fn();return}
   b.dataset.armed='1';const t=b.textContent;b.textContent=label;b.classList.add('arm');
@@ -575,7 +574,7 @@ function renderHist(){
   $('#hf').querySelectorAll('button').forEach(b=>b.onclick=()=>{hf=b.dataset.g;renderHist()});
   const list=S.sessions.filter(s=>!hf||catOf(s)===hf).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:b.id-a.id);
   $('#hclr').innerHTML=S.sessions.length?`<div class="danger"><button type="button" class="dl" id="clr">Effacer tout l’historique (${S.sessions.length} exercice${S.sessions.length>1?'s':''} noté${S.sessions.length>1?'s':''})</button><small>Utile après des tests. Cette action est définitive.</small></div>`:'';
-  if($('#clr'))$('#clr').onclick=e=>arm(e.target,'Oui, tout effacer',()=>{S.sessions=[];S.bets=[];S.wk={};hf='';persist();render();showTab('hist')});
+  if($('#clr'))$('#clr').onclick=e=>arm(e.target,'Oui, tout effacer',()=>{S.sessions=[];S.bets=[];S.wk={};hf='';persist();render();showTab('log')});
   if(!list.length){$('#hl').innerHTML='<p class="empty">'+(S.sessions.length?'Aucune séance dans cette catégorie.':'Tes séances enregistrées apparaîtront ici.')+'</p>';return}
   const days={};list.forEach(s=>(days[s.date]=days[s.date]||[]).push(s));
   $('#hl').innerHTML=Object.keys(days).map(d=>{
@@ -628,7 +627,7 @@ $('#save').onclick=()=>{
   persist();msg.textContent='Séance enregistrée.';
   $('#sets').dataset.touched='';pick(known||name);
 };
-$('#t1').onclick=()=>showTab('log');$('#t2').onclick=()=>showTab('hist');
+$('#t1').onclick=()=>showTab('log');
 $('#spre').innerHTML=[30,45,60,90,120,180].map(s=>`<button type="button" data-s="${s}">${mmss(s)}</button>`).join('');
 $('#spre').querySelectorAll('button').forEach(b=>b.onclick=()=>{sel=+b.dataset.s;tick()});
 $('#sm').onclick=()=>{sel=Math.max(15,sel-15);tick()};$('#sp').onclick=()=>{sel+=15;tick()};
@@ -1505,7 +1504,7 @@ const HELPS=[
  ['#tab-timer h2',/^Chrono/,'chrono'],['#pint > label',/Programmes/,'tabata'],
  ['#tab-def h2',/Défis de la semaine/,'defisem'],['#tab-def h2',/^Jeux/,'jeux'],['#tab-def h2',/Paris/,'paris'],['#lvp',0,'pts'],['#chest',0,'coffre',1],['#wtip b',0,'defjour'],
  ['#rh',0,'gps'],['#rl2',0,el=>/Allure/.test(el.textContent)?'allure':'vitmoy'],['#rl3',0,el=>/max/i.test(el.textContent)?'vitmax':'kmh'],['#rmh',0,()=>RM==='bike'?'carteTour':'carte'],['#rwh',0,'defisrun'],['#tab-run h2',/Séance en salle/,'salle'],['#friendscard h2',0,'amis'],['#tab-run h2',/Importer depuis/,'montre'],['#svcard h2',0,'strava'],['#hwcard h2',0,'hw'],['#jinfo .chips',0,'tour'],
- ['#volcard h2',0,'volume'],['#bwcard h2',0,'poids'],['#tab-hist h2',/Mes données/,'sauv'],['#tab-hist summary',/Restaurer/,'restaure'],['#hl > .day:first-child h3',0,'tonnage'],
+ ['#volcard h2',0,'volume'],['#bwcard h2',0,'poids'],['#tab-log h2',/Mes données/,'sauv'],['#tab-log summary',/Restaurer/,'restaure'],['#hl > .day:first-child h3',0,'tonnage'],
  ['#ovt',0,el=>/Photo/.test(el.textContent)?'photo':/Coffre/.test(el.textContent)?'coffre':/niveau|Bienvenue/i.test(el.textContent)?'niveau':null]];
 function addHelp(){HELPS.forEach(([sel,rx,key,after])=>{document.querySelectorAll(sel).forEach(el=>{if(rx&&!rx.test(el.textContent))return;const k=typeof key==='function'?key(el):key;if(!k||!HELP[k])return;
   const ex=after?(el.nextElementSibling&&el.nextElementSibling.classList.contains('hq')?el.nextElementSibling:null):el.querySelector(':scope > .hq');
@@ -1568,7 +1567,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 16</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 17</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
