@@ -322,6 +322,7 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 <section class="card"><h2 id="rmh">Carte du voyage</h2><div id="jinfo"></div><div id="jmapw"></div></section>
 <section class="card"><h2 id="rwh">Défis de course</h2><div id="rwk"></div></section>
 <section class="card" id="svcard"><h2>⌚ Montre Garmin / Strava</h2><div id="svbox"></div></section>
+<section class="card" id="hwcard"><h2>⌚ Montre via Apple Santé</h2><p class="st">Garmin Connect peut envoyer tes sorties à Apple Santé. Un Raccourci iPhone les lit et les copie ici. Touche ensuite le bouton : les nouvelles sorties font avancer ta carte.</p><button type="button" class="p" id="hwpaste" style="width:100%">📋 Importer mes sorties (Apple Santé)</button><textarea id="hwtxt" rows="3" placeholder="Ou colle ici le texte du Raccourci" style="margin-top:8px"></textarea><div class="st" id="hwmsg" role="status"></div><details style="margin-top:8px"><summary>Comment créer le Raccourci ?</summary><div class="st">1. Garmin Connect > Plus > Paramètres > Applications connectées > Apple Santé : active-le et autorise « Entraînements ».<br>2. App Raccourcis > + nouveau raccourci. Ajoute « Rechercher des échantillons de santé » : type Entraînements, tri par date de début, plus récent d’abord, limite 5.<br>3. Ajoute « Répéter avec chaque élément » et, dedans, « Texte » avec : Type d’entraînement ; Distance ; Durée ; Date de début (format ISO 8601), séparés par des points-virgules.<br>4. Après la boucle : « Copier dans le presse-papiers » (résultat de la boucle). Nomme-le « Sorties Carnet ».<br>5. Après une sortie : lance le Raccourci, ouvre l’app, touche le bouton ci-dessus.</div></details></section>
 <section class="card"><h2>Importer depuis ma montre</h2><p class="st">Exporte ton activité depuis l’app de ta montre au format GPX ou TCX, puis choisis le fichier ici. La distance, la durée, la date et le tracé viennent de la montre. Le sport (course ou vélo) est reconnu automatiquement.</p>
 <input type="file" id="wf" accept=".gpx,.tcx,application/gpx+xml,application/xml,text/xml" multiple style="margin-top:8px"><div class="st" id="wmsg" role="status"></div>
 <details style="margin-top:8px"><summary>Comment obtenir le fichier ?</summary><div class="st">• <b>Garmin Connect</b> (site web) : ouvre l’activité, roue crantée ⚙, « Exporter en GPX » ou « TCX ».<br>• <b>Strava</b> (site web) : ouvre l’activité, menu « ⋯ », « Exporter GPX ».<br>• <b>Polar, Suunto, Coros, Samsung, Fitbit…</b> : cherche « Exporter » dans l’activité, sur leur site ou leur app.<br>• <b>Apple Watch</b> : Apple n’exporte pas directement. Utilise une app comme HealthFit ou RunGap pour obtenir un GPX/TCX.<br>Les doublons (même activité importée deux fois) sont refusés.</div></details></section>
@@ -1494,6 +1495,7 @@ const HELP={
  sauv:['Sauvegarde','Une copie de toutes tes données. Garde-la au cas où tu changes de téléphone.'],
  restaure:['Restaurer','Remets ici une sauvegarde faite avant. Elle remplace tes données actuelles.'],
  montre:['Import montre','Ta montre enregistre ton activité. Exporte-la en fichier GPX ou TCX depuis son app, puis choisis le fichier ici : la distance, la durée et le tracé sont repris tels quels et font avancer ta carte.'],
+ hw:['Montre via Apple Santé','Garmin Connect copie tes sorties dans Apple Santé. Un Raccourci iPhone que tu crées une fois les lit et les met dans le presse-papiers. Dans l’app, le bouton les importe : distance et durée avancent sur la carte. Le tracé GPS n’est pas toujours transmis par Garmin.'],
  strava:['Montre Garmin','Ta montre Garmin envoie tes sorties à Strava, et Carnet de muscu les récupère toute seule quand tu ouvres l’app : distance, durée et tracé font avancer ta carte. Tu ne fais rien après la première liaison. Les activités saisies à la main dans Strava sont ignorées.'],
  amis:['Amis','Ajoute un ami avec son code, compare vos points, séances et kilomètres de la semaine, et envoyez-vous des encouragements. Tu ne partages que ton pseudo, ton avatar et tes totaux, pas tes photos ni ton historique détaillé.'],
  tonnage:['Kilos soulevés','Le total soulevé ce jour-là : charge × répétitions, tout additionné.']};
@@ -1502,7 +1504,7 @@ const HELPS=[
  ['#tip .tip',0,el=>/Plateau/.test(el.textContent)?'plateau':'surcharge'],['#tip summary',0,'echauf'],['#tip .st',/1RM/,'rm'],['#htitle',0,'progres'],['#hlvl',0,'niveau',1],
  ['#tab-timer h2',/^Chrono/,'chrono'],['#pint > label',/Programmes/,'tabata'],
  ['#tab-def h2',/Défis de la semaine/,'defisem'],['#tab-def h2',/^Jeux/,'jeux'],['#tab-def h2',/Paris/,'paris'],['#lvp',0,'pts'],['#chest',0,'coffre',1],['#wtip b',0,'defjour'],
- ['#rh',0,'gps'],['#rl2',0,el=>/Allure/.test(el.textContent)?'allure':'vitmoy'],['#rl3',0,el=>/max/i.test(el.textContent)?'vitmax':'kmh'],['#rmh',0,()=>RM==='bike'?'carteTour':'carte'],['#rwh',0,'defisrun'],['#tab-run h2',/Séance en salle/,'salle'],['#friendscard h2',0,'amis'],['#tab-run h2',/Importer depuis/,'montre'],['#svcard h2',0,'strava'],['#jinfo .chips',0,'tour'],
+ ['#rh',0,'gps'],['#rl2',0,el=>/Allure/.test(el.textContent)?'allure':'vitmoy'],['#rl3',0,el=>/max/i.test(el.textContent)?'vitmax':'kmh'],['#rmh',0,()=>RM==='bike'?'carteTour':'carte'],['#rwh',0,'defisrun'],['#tab-run h2',/Séance en salle/,'salle'],['#friendscard h2',0,'amis'],['#tab-run h2',/Importer depuis/,'montre'],['#svcard h2',0,'strava'],['#hwcard h2',0,'hw'],['#jinfo .chips',0,'tour'],
  ['#volcard h2',0,'volume'],['#bwcard h2',0,'poids'],['#tab-hist h2',/Mes données/,'sauv'],['#tab-hist summary',/Restaurer/,'restaure'],['#hl > .day:first-child h3',0,'tonnage'],
  ['#ovt',0,el=>/Photo/.test(el.textContent)?'photo':/Coffre/.test(el.textContent)?'coffre':/niveau|Bienvenue/i.test(el.textContent)?'niveau':null]];
 function addHelp(){HELPS.forEach(([sel,rx,key,after])=>{document.querySelectorAll(sel).forEach(el=>{if(rx&&!rx.test(el.textContent))return;const k=typeof key==='function'?key(el):key;if(!k||!HELP[k])return;
@@ -1566,7 +1568,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 14</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 15</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
@@ -1663,7 +1665,7 @@ let SVT=0,SVB=false;
 function decPoly(s){const o=[];let i=0,la=0,lo=0;while(i<s.length){for(const k of[0,1]){let r=0,sh=0,b;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32&&i<=s.length);const d=(r&1)?~(r>>1):(r>>1);if(k)lo+=d;else la+=d}o.push([la/1e5,lo/1e5])}return o}
 function svMsg(t){const m=$('#svmsg');if(m)m.innerHTML=t}
 function svRender(){const b=$('#svbox');if(!b)return;const c=SVC();
-  if(!c){b.innerHTML='<p class="st">La synchronisation automatique n’est pas encore activée dans cette installation (voir STRAVA-SETUP.md). En attendant, l’import de fichier ci-dessous fonctionne.</p>';return}
+  if(!c){const k=$('#svcard');if(k)k.hidden=true;return}
   if(S.sv&&S.sv.refresh)b.innerHTML='<p>✓ Relié à Strava'+(S.sv.name?' ('+esc(S.sv.name)+')':'')+'. Tes sorties arrivent à l’ouverture de l’app.</p><button type="button" class="p" id="svnow" style="width:100%">↻ Récupérer mes sorties maintenant</button><button type="button" class="dl" id="svoff" style="width:100%;margin-top:8px">Délier Strava</button><div class="st" id="svmsg" role="status"></div>';
   else b.innerHTML='<p class="st">Garmin Connect envoie déjà tes activités à Strava si tu le règles une fois (Garmin Connect : Plus > Paramètres > Applications connectées > Strava). Relie ensuite Strava ici.</p><button type="button" class="p" id="svon" style="width:100%">🟠 Relier Strava</button><div class="st" id="svmsg" role="status"></div>';
   if($('#svon'))$('#svon').onclick=svConnect;if($('#svnow'))$('#svnow').onclick=()=>svSync(true);
@@ -1696,6 +1698,29 @@ async function svSync(manual){
   SVB=false}
 svRender();svReturn().then(()=>svSync(false));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')svSync(false)});
+/* ---------- montre via Apple Santé : lignes "Type;Distance;Durée;Début" (Raccourcis iPhone) ---------- */
+function hwNum(s){const m=String(s).replace(',','.').match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):NaN}
+function hwKm(s){const v=hwNum(s);if(!isFinite(v))return NaN;s=String(s).toLowerCase();if(/\bmi\b|mile/.test(s))return v*1.609344;if(/km|kilom/.test(s))return v;if(/\bm\b|mètre|metre/.test(s)&&!/mm/.test(s))return v/1000;return v>200?v/1000:v}
+function hwMin(s){s=String(s).trim().toLowerCase();let m=s.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);if(m)return m[3]!=null?(+m[1])*60+(+m[2])+(+m[3])/60:(+m[1])+(+m[2])/60;
+  let t=0,f=false;const rx=/(\d+(?:[.,]\d+)?)\s*(h|heure|hr|min|mn|m|sec|s)\b/g;let x;while((x=rx.exec(s))){const v=parseFloat(x[1].replace(',','.')),u=x[2];f=true;t+=/^h|heure|hr/.test(u)?v*60:/^(min|mn|m)$/.test(u)?v:v/60}
+  if(f)return t;const v=hwNum(s);return isFinite(v)?v:NaN}
+function hwImport(txt){const out=[];let n=0,lastR=null,lastPk=0,lastBike=false;
+  const lines=String(txt||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(!lines.length)return{n:0,msg:'Rien à importer : colle d’abord le texte envoyé par le Raccourci.'};
+  for(const l of lines){const p=l.split(';').map(x=>x.trim());if(p.length<3)continue;
+    const bike=/v[eé]lo|cycl|bike|ride|bicy/i.test(p[0])?true:/cour|run|footing|jog|marche|walk|trail/i.test(p[0])?false:null;if(bike===null)continue;
+    const km=hwKm(p[1]),mn=hwMin(p[2]);let t0=Date.parse(p[3]||'');if(!isFinite(t0))t0=0;
+    if(!(km>0)||!(mn>0))continue;const v=km/mn*60,date=t0?new Date(t0).toLocaleDateString('sv'):today();
+    if(km<.3||mn<3){out.push('✗ trop court');continue}if(v>(bike?70:22.5)||v<(bike?6:3)){out.push('✗ vitesse irréaliste ('+fmt(Math.round(v*10)/10)+' km/h)');continue}
+    const dist=Math.round(km*1000),dur=Math.round(mn*60);
+    if(S.runs.some(q=>t0&&q.t0&&Math.abs(q.t0-t0)<60000)||S.runs.some(q=>!!q.v===bike&&q.date===date&&Math.abs(q.dist-dist)<80&&Math.abs(q.dur-dur)<45))continue;
+    const pk=bike?bikeKm():totalKm(),q={id:Date.now()+n,date,dist,dur,route:[],src:'santé',v:bike?1:0};if(t0)q.t0=t0;S.runs.push(q);n++;lastR=q;lastPk=pk;lastBike=bike;out.push((bike?'🚴 ':'🏃 ')+fmt(Math.round(km*100)/100)+' km ('+dateFr(date)+')')}
+  if(n){persist();render();if(lastR){showTab(lastBike?'bike':'run');runSummary(lastR,lastPk)}}
+  return{n,msg:n?'✓ '+n+' sortie'+(n>1?'s':'')+' importée'+(n>1?'s':'')+' : '+out.filter(x=>x[0]!=='✗').join(', '):'Aucune nouvelle sortie (déjà importées, ou pas des courses / sorties vélo).'+(out.length?' Ignorée : '+out.join(', '):'')}}
+function hwShow(r){const m=$('#hwmsg');if(m)m.innerHTML=esc(r.msg)}
+(function(){const b=$('#hwpaste'),t=$('#hwtxt');if(!b)return;
+  b.onclick=async()=>{let s='';try{s=await navigator.clipboard.readText()}catch(e){}if(!s)s=t.value;if(!s){hwShow({msg:'Colle le texte du Raccourci dans la zone, puis touche à nouveau le bouton.'});t.focus();return}t.value='';hwShow(hwImport(s))};
+  const u=new URL(location.href),q=u.searchParams.get('hw');if(q){history.replaceState(null,'',u.origin+u.pathname);showTab('run');hwShow(hwImport(q))}})();
 render();pick('');
 init();
 </script>
