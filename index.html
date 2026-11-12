@@ -261,17 +261,18 @@ html{touch-action:manipulation}button,.stp,.rstep,.chips button,label{touch-acti
 <div class="dd"><button type="button" class="dbtn" id="bx" aria-haspopup="listbox" aria-expanded="false"><span id="tx">Choisis un exercice…</span><span aria-hidden="true">▾</span></button><div class="dlist" id="lx" role="listbox" hidden></div></div>
 <div id="custom" hidden style="margin-top:10px"><label for="ex">Nom de ton exercice</label><input id="ex" placeholder="Ex. Développé couché" autocomplete="off"></div>
 <div id="tip"></div>
+
+<label for="date" style="margin-top:10px">Date</label>
+<input id="date" type="date">
+<div style="margin-top:12px" id="sets"></div>
+<div id="rpew" hidden style="margin-top:10px"><label for="rpe">Effort ressenti (RPE) — optionnel</label><select id="rpe"><option value="">—</option><option value="6">6 · facile (4 reps en réserve)</option><option value="7">7 · 3 reps en réserve</option><option value="8">8 · 2 reps en réserve</option><option value="9">9 · 1 rep en réserve</option><option value="10">10 · échec</option></select></div>
+<button id="add" type="button">Ajouter une série</button>
 <div class="rsel"><label>⏱ Temps de repos entre les séries</label>
 <div class="rstep"><button type="button" id="sm" aria-label="Moins 15 secondes">−</button><div><b id="sv">1:30</b><small id="sr"></small></div><button type="button" id="sp" aria-label="Plus 15 secondes">+</button></div>
 <div class="chips" id="spre"></div>
 <label class="sw"><input type="checkbox" id="sauto"> Lancer le repos dès que je valide une série</label>
 <label class="sw"><input type="checkbox" id="ssnd"> Son et vibration</label>
 <details><summary>Repos conseillés par muscle</summary><div id="ttbl" style="margin-top:8px"></div></details></div>
-<label for="date" style="margin-top:10px">Date</label>
-<input id="date" type="date">
-<div style="margin-top:12px" id="sets"></div>
-<div id="rpew" hidden style="margin-top:10px"><label for="rpe">Effort ressenti (RPE) — optionnel</label><select id="rpe"><option value="">—</option><option value="6">6 · facile (4 reps en réserve)</option><option value="7">7 · 3 reps en réserve</option><option value="8">8 · 2 reps en réserve</option><option value="9">9 · 1 rep en réserve</option><option value="10">10 · échec</option></select></div>
-<button id="add" type="button">Ajouter une série</button>
 <button id="save" class="p" type="button">Enregistrer cet exercice</button>
 <div class="st" id="msg" role="status"></div>
 </section>
@@ -473,7 +474,7 @@ function tick(){
   ivAdvance();drawTimer();
 }
 function adj(d){if(T.st==='idle')sel=Math.max(15,sel+d);else if(T.st==='run'){T.end+=d*1000;T.total=Math.max(5,T.total+d)}else if(T.st==='pause'){T.left=Math.max(5,T.left+d);T.total=Math.max(5,T.total+d)}else if(d>0)startRest(d);tick()}
-function go(){if(T.st==='idle'||T.st==='over')startRest(sel);else if(T.st==='run'){T.left=Math.max(1,leftNow());T.st='pause'}else{T.st='run';T.end=Date.now()+T.left*1000}tick()}
+function go(){if((T.st==='idle'||T.st==='over')&&!document.querySelector('#sets .row.done')&&!(S.cw&&S.cw.ids.length)){const m=$('#msg');if(m)m.textContent='Fais d’abord une série, puis lance le repos.';return}if(T.st==='idle'||T.st==='over')startRest(sel);else if(T.st==='run'){T.left=Math.max(1,leftNow());T.st='pause'}else{T.st='run';T.end=Date.now()+T.left*1000}tick()}
 function resetT(){T={st:'idle',end:0,total:0,left:0};tick()}
 function setDur(s){sel=s;if(T.st!=='idle')startRest(s);else tick()}
 let CFG={prep:10,work:20,rest:10,rounds:8},IV={st:'idle',phase:'work',rd:1,left:0,total:0,end:0},SW={st:'idle',start:0,acc:0,laps:[]},lastIB=-1,WL=null,mode='int';
@@ -1582,7 +1583,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 21</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 22</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
