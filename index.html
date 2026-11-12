@@ -239,11 +239,12 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 #hpop[hidden]{display:none}
 .hbox{background:var(--card);color:var(--ink);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.25)}
 .hbox b{font-size:18px;display:block;margin-bottom:6px}.hbox p{margin:0 0 14px;font-size:16px;line-height:1.45}
+.hero{position:relative}#havatar{display:none;position:absolute;top:14px;left:14px;width:38px;height:38px;border-radius:50%;padding:0;border:2px solid #fff;background:#fff;color:var(--ac);font-weight:800;font-size:17px;overflow:hidden;min-height:0;cursor:pointer}#havatar img{width:100%;height:100%;object-fit:cover;display:block}.hero.hasav #havatar{display:block}.hero.hasav h1{padding-left:48px}
 </style>
 </head>
 <body>
 <main>
-<header class="hero"><div class="hrow"><div><h1>Carnet de muscu</h1>
+<header class="hero"><button type="button" id="havatar" aria-label="Mon compte"></button><div class="hrow"><div><h1>Carnet de muscu</h1>
 <p>Note tes charges, bats ton record à la séance suivante.</p></div><button type="button" class="avbtn" id="hav" aria-label="Mon profil et mes récompenses"></button></div><div class="stats" id="stats"></div><button type="button" class="lvlb" id="hlvl"></button> <button type="button" class="lvlb" id="hacct">☁ Se connecter</button></header>
 <nav class="tabs"><button type="button" id="t1" class="on">Séance</button><button type="button" id="t3">Chrono</button><button type="button" id="t4">Défis</button><button type="button" id="t5">Footing</button><button type="button" id="t6">Vélo</button><button type="button" id="t2">Historique</button></nav>
 <div id="tab-log">
@@ -1552,12 +1553,16 @@ async function fbInit(){
     FB.auth.getRedirectResult().catch(e=>acctMsg('Connexion impossible : '+(e.message||e.code)));
     FB.auth.onAuthStateChanged(u=>{CU=u;FD.me=null;FD.t=0;renderAcct();if(u)cloudPull();if(typeof friendsOpen==='function')friendsOpen(true)})}
   catch(e){acctMsg('Service de connexion indisponible (réseau ?). L’app continue de fonctionner sans compte.');renderAcct()}}
-function renderAcct(){const b=$('#hacct');if(!b)return;b.textContent=CU?'☁ '+(CU.displayName||CU.email||'Connecté').split(' ')[0]:'☁ Se connecter';if($('#ovt').textContent==='Mon compte'&&!$('#ov').hidden)acctOverlay()}
+function renderAcct(){const b=$('#hacct');if(!b)return;b.textContent=CU?'☁ '+(CU.displayName||CU.email||'Connecté').split(' ')[0]:'☁ Se connecter';
+  const av=$('#havatar'),hero=document.querySelector('.hero');
+  if(av&&hero){if(CU){const ph=CU.photoURL||(CU.providerData&&CU.providerData[0]&&CU.providerData[0].photoURL)||'',ini=((CU.displayName||CU.email||'?').trim()[0]||'?').toUpperCase();
+    if(ph){av.innerHTML='<img alt="" referrerpolicy="no-referrer">';av.firstChild.src=ph;av.firstChild.onerror=()=>{av.textContent=ini}}else av.textContent=ini;hero.classList.add('hasav')}else{hero.classList.remove('hasav');av.textContent=''}}
+  if($('#ovt').textContent==='Mon compte'&&!$('#ov').hidden)acctOverlay()}
 function mkProvider(k){if(k==='google')return new firebase.auth.GoogleAuthProvider();if(k==='facebook')return new firebase.auth.FacebookAuthProvider();const p=new firebase.auth.OAuthProvider('apple.com');p.addScope('email');p.addScope('name');return p}
 async function signIn(k){
   if(!FB){acctMsg('La connexion n’est pas encore configurée (voir AUTH-SETUP.md).');return}
-  try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;if(sa)await FB.auth.signInWithRedirect(pr);else await FB.auth.signInWithPopup(pr)}
-  catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':'Connexion impossible : '+((e&&e.message)||e))}}
+  try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
+  catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
   const note=acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'';
   let body;
@@ -1649,7 +1654,7 @@ async function refuseReq(id){try{await FB.db.doc('requests/'+CU.uid+'/from/'+id)
 async function removeFriend(id){try{await FB.db.doc('friends/'+CU.uid+'/with/'+id).delete();await FB.db.doc('circle/'+CU.uid+'/m/'+id).delete();await FB.db.doc('friends/'+id+'/with/'+CU.uid).delete()}catch(e){}friendsOpen(true)}
 async function cheer(id,b){try{await FB.db.doc('cheers/'+id+'/from/'+CU.uid+'_'+today()).set({from:CU.uid,name:FD.me.name,emoji:['👏','🔥','💪'][Math.floor(Math.random()*3)],ts:Date.now()});b.textContent='✓ Envoyé';b.disabled=true}catch(e){b.textContent='Impossible'}}
 
-$('#hacct').onclick=acctOverlay;fbInit();
+$('#hacct').onclick=acctOverlay;if($('#havatar'))$('#havatar').onclick=acctOverlay;fbInit();
 render();pick('');
 init();
 </script>
