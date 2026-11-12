@@ -1,0 +1,20 @@
+CARNET DE MUSCU — application installable (PWA)
+
+CONTENU : index.html, manifest.webmanifest, sw.js, dossier icons/
+
+1) METTRE EN LIGNE (une seule fois, gratuit, il faut du HTTPS pour le GPS et l'installation)
+   Option simple — Netlify Drop : va sur app.netlify.com/drop, glisse le dossier décompressé. Tu obtiens un lien https.
+   Option durable — GitHub Pages : crée un dépôt, envoie ces fichiers à la racine, puis Settings > Pages > Deploy from branch.
+   Option — Cloudflare Pages : « Upload assets » avec le dossier.
+
+2) INSTALLER SUR LE TÉLÉPHONE
+   Android (Chrome) : ouvre le lien > menu ⋮ > « Installer l'application ».
+   iPhone (Safari) : ouvre le lien > bouton Partager > « Sur l'écran d'accueil ».
+   L'icône apparaît comme une vraie app, en plein écran, et fonctionne sans connexion.
+
+3) CE QUI CHANGE PAR RAPPORT À LA VERSION DANS CLAUDE
+   - Les données restent sur ton téléphone (pas de synchronisation entre appareils). Utilise « Mes données > Exporter » pour sauvegarder / changer de téléphone.
+   - Séance en salle : la photo de l'écran est enregistrée comme preuve, mais les chiffres ne sont pas lus automatiquement (cette lecture passe par Claude). Ces séances sont marquées « photo non lue ».
+   - Import montre : exporte l'activité en GPX/TCX depuis l'app de ta montre, puis importe-la (onglets Footing / Vélo).
+   - Connexion par compte (Apple / Google-Android / Facebook) : le code est inclus, il suffit de remplir config.js. Voir AUTH-SETUP.md. Sans cela, l'app marche sans compte.
+   - Le GPS marche seulement en HTTPS, écran allumé.
