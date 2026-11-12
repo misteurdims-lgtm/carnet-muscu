@@ -104,7 +104,7 @@ body.hasmini main{padding-bottom:100px}
 .set.done{border-left-color:var(--up);background:var(--upbg)}
 .dn{width:100%;margin-top:8px;color:var(--up);border-color:var(--up);background:transparent}
 .set.done .dn{background:var(--up);color:var(--onup)}
-.rest{position:sticky;top:8px;z-index:12;background:var(--card);border:2px solid var(--g);border-radius:18px;padding:12px 14px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.rest{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:12px;right:12px;z-index:40;background:var(--card);border:2px solid var(--g);border-radius:18px;padding:12px 14px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .rest[hidden]{display:none}
 .rest.over .rbig{animation:pulse .8s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.rest.over .rbig{animation:none}}
@@ -239,6 +239,7 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 #hpop[hidden]{display:none}
 .hbox{background:var(--card);color:var(--ink);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.25)}
 .hbox b{font-size:18px;display:block;margin-bottom:6px}.hbox p{margin:0 0 14px;font-size:16px;line-height:1.45}
+html{touch-action:manipulation}button,.stp,.rstep,.chips button,label{touch-action:manipulation;-webkit-touch-callout:none}button,.stp button,.rstep button{-webkit-user-select:none;user-select:none}#restsp{height:0}#cwcard .cw{font-weight:700}
 .hero{position:relative}#havatar{display:none;position:absolute;top:14px;left:14px;width:38px;height:38px;border-radius:50%;padding:0;border:2px solid #fff;background:#fff;color:var(--ac);font-weight:800;font-size:17px;overflow:hidden;min-height:0;cursor:pointer}#havatar img{width:100%;height:100%;object-fit:cover;display:block}.hero.hasav #havatar{display:block}.hero.hasav h1{padding-left:48px}
 .lk{display:inline-block;padding:9px 12px;border-radius:12px;border:1.5px solid var(--ac);color:var(--ac);font-weight:700;font-size:14px;text-decoration:none;margin:0 6px 6px 0;background:transparent}
 </style>
@@ -250,7 +251,8 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 <nav class="tabs"><button type="button" id="t1" class="on">Séance</button><button type="button" id="t3">Chrono</button><button type="button" id="t4">Défis</button><button type="button" id="t5">Footing</button><button type="button" id="t6">Vélo</button></nav>
 <div id="tab-log">
 <section class="card" id="progcard"><h2>Ma séance</h2><div id="guide"></div><div class="chips" id="progchips"></div><div id="proglist"></div></section>
-<div class="rest" id="rest" hidden role="timer"><div class="rtop"><span id="rlab">Repos en cours</span><span id="rnext"></span></div><div class="rbig" id="rbig">1:30</div><div class="bar"><i id="rbar"></i></div><div class="rbtn"><button type="button" id="rm">−15 s</button><button type="button" class="p" id="rgo">▶ Commencer la série 2</button><button type="button" id="rp">+15 s</button></div></div>
+<section class="card" id="cwcard" hidden></section>
+<div id="restsp"></div><div class="rest" id="rest" hidden role="timer"><div class="rtop"><span id="rlab">Repos en cours</span><span id="rnext"></span></div><div class="rbig" id="rbig">1:30</div><div class="bar"><i id="rbar"></i></div><div class="rbtn"><button type="button" id="rm">−15 s</button><button type="button" class="p" id="rgo">▶ Commencer la série 2</button><button type="button" id="rp">+15 s</button></div></div>
 <section class="card">
 <h2>Nouvelle série</h2>
 <label>1. Catégorie (partie du corps)</label>
@@ -270,7 +272,7 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 <div style="margin-top:12px" id="sets"></div>
 <div id="rpew" hidden style="margin-top:10px"><label for="rpe">Effort ressenti (RPE) — optionnel</label><select id="rpe"><option value="">—</option><option value="6">6 · facile (4 reps en réserve)</option><option value="7">7 · 3 reps en réserve</option><option value="8">8 · 2 reps en réserve</option><option value="9">9 · 1 rep en réserve</option><option value="10">10 · échec</option></select></div>
 <button id="add" type="button">Ajouter une série</button>
-<button id="save" class="p" type="button">Enregistrer la séance</button>
+<button id="save" class="p" type="button">Enregistrer cet exercice</button>
 <div class="st" id="msg" role="status"></div>
 </section>
 
@@ -354,7 +356,7 @@ const key=s=>s.trim().toLowerCase();
 const e1rm=(kg,r)=>kg*(1+r/30);
 
 try{const l=localStorage.getItem(LS);if(l)S=JSON.parse(l)}catch(e){}
-function norm(){if(!S||!Array.isArray(S.sessions))S={sessions:[]};if(!Array.isArray(S.bets))S.bets=[];if(!Array.isArray(S.runs))S.runs=[];if(!S.wkr||typeof S.wkr!=='object'||Array.isArray(S.wkr))S.wkr={};if(!S.wk||typeof S.wk!=='object'||Array.isArray(S.wk))S.wk={};if(!Array.isArray(S.bw))S.bw=[];if(!S.wkb||typeof S.wkb!=='object'||Array.isArray(S.wkb))S.wkb={};if(!S.profile||typeof S.profile!=='object')S.profile={};if(!Array.isArray(S.seen))S.seen=[];if(!S.game||typeof S.game!=='object')S.game={}}
+function norm(){if(S&&(!S.cw||!Array.isArray(S.cw.ids)))S.cw=null;if(S&&!Array.isArray(S.wo))S.wo=[];if(!S||!Array.isArray(S.sessions))S={sessions:[]};if(!Array.isArray(S.bets))S.bets=[];if(!Array.isArray(S.runs))S.runs=[];if(!S.wkr||typeof S.wkr!=='object'||Array.isArray(S.wkr))S.wkr={};if(!S.wk||typeof S.wk!=='object'||Array.isArray(S.wk))S.wk={};if(!Array.isArray(S.bw))S.bw=[];if(!S.wkb||typeof S.wkb!=='object'||Array.isArray(S.wkb))S.wkb={};if(!S.profile||typeof S.profile!=='object')S.profile={};if(!Array.isArray(S.seen))S.seen=[];if(!S.game||typeof S.game!=='object')S.game={}}
 norm();
 
 function persist(){
@@ -580,14 +582,27 @@ function renderHist(){
   $('#hl').innerHTML=Object.keys(days).map(d=>{
     const vol=days[d].reduce((a,s)=>a+s.sets.reduce((b,x)=>b+x.kg*x.reps,0),0),
       nm=new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-    return `<div class="day"><h3>${nm} <small>· ${fmt(Math.round(vol))} kg soulevés</small></h3>`+days[d].map(s=>`<div class="ent" style="--g:${COL[catOf(s)]||'var(--ac)'}"><b>${esc(s.ex)}</b><small>${s.sets.length} série${s.sets.length>1?'s':''} : ${s.sets.map(x=>fmt(x.kg)+'×'+x.reps).join(' · ')}</small><button type="button" data-r="${s.id}">Refaire</button><button type="button" class="dl" data-d="${s.id}">Supprimer</button></div>`).join('')+`<button type="button" class="dl" data-day="${d}" style="margin-left:0">Supprimer ce jour</button></div>`}).join('');
+    const ids=new Set(days[d].map(s=>s.id)),wos=(S.wo||[]).filter(w=>w.ids.some(i=>ids.has(i))),badge=wos.map(w=>{const ss=days[d].filter(s=>w.ids.includes(s.id)),q=woStats(ss);return `<div class="st">🏁 Séance complète : ${minTxt(w.t1-w.t0)} · ${q.ex} exercice${q.ex>1?'s':''} · ${q.sets} série${q.sets>1?'s':''}</div>`}).join('');
+    return `<div class="day"><h3>${nm} <small>· ${fmt(Math.round(vol))} kg soulevés</small></h3>${badge}`+days[d].map(s=>`<div class="ent" style="--g:${COL[catOf(s)]||'var(--ac)'}"><b>${esc(s.ex)}</b><small>${s.sets.length} série${s.sets.length>1?'s':''} : ${s.sets.map(x=>fmt(x.kg)+'×'+x.reps).join(' · ')}</small><button type="button" data-r="${s.id}">Refaire</button><button type="button" class="dl" data-d="${s.id}">Supprimer</button></div>`).join('')+`<button type="button" class="dl" data-day="${d}" style="margin-left:0">Supprimer ce jour</button></div>`}).join('');
   $('#hl').querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>arm(b,'Confirmer ?',()=>delSessions(s=>s.date===b.dataset.day&&(!hf||catOf(s)===hf))));
   $('#hl').querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>arm(b,'Confirmer ?',()=>delSessions(s=>String(s.id)===b.dataset.d)));
   $('#hl').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const s=S.sessions.find(x=>String(x.id)===b.dataset.r);if(!s)return;grp=catOf(s);custom=false;$('#sets').dataset.touched='';showTab('log');pick(s.ex)});
 }
+
+function cwSessions(){if(!S.cw)return[];return S.cw.ids.map(id=>S.sessions.find(s=>s.id===id)).filter(Boolean)}
+function woStats(list){return{ex:list.length,sets:list.reduce((a,s)=>a+s.sets.length,0),vol:Math.round(list.reduce((a,s)=>a+s.sets.reduce((b,x)=>b+x.kg*x.reps,0),0))}}
+function minTxt(ms){const m=Math.max(1,Math.round(ms/60000));return m>=60?Math.floor(m/60)+' h '+String(m%60).padStart(2,'0'):m+' min'}
+function renderCW(){const c=$('#cwcard');if(!c)return;const l=cwSessions();if(!l.length){if(S.cw&&!S.cw.ids.length)S.cw=null;c.hidden=true;c.innerHTML='';return}
+  const st=woStats(l);c.hidden=false;
+  c.innerHTML=`<h2>🏋️ Séance en cours</h2><p class="cw">${st.ex} exercice${st.ex>1?'s':''} · ${st.sets} série${st.sets>1?'s':''} · ${fmt0(st.vol)} kg soulevés</p><div class="st">Commencée à ${new Date(S.cw.t0).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${l.map(s=>esc(s.ex)).join(', ')}</div><button type="button" class="p" id="cwend" style="width:100%;margin-top:10px">🏁 Terminer la séance</button><button type="button" class="dl" id="cwcancel" style="width:100%;margin-top:8px">Ne pas regrouper</button>`;
+  $('#cwend').onclick=finishWorkout;$('#cwcancel').onclick=e=>arm(e.target,'Oui, abandonner le regroupement',()=>{S.cw=null;persist();render()})}
+function finishWorkout(){const l=cwSessions();if(!l.length)return;const t1=Date.now(),st=woStats(l),wo={id:t1,date:l[0].date,t0:S.cw.t0,t1,ids:l.map(s=>s.id)};
+  S.wo.push(wo);S.cw=null;resetT();persist();render();
+  openOv('Séance terminée','<div class="card"><h2>🏁 Bravo !</h2><p class="cw">'+minTxt(t1-wo.t0)+' · '+st.ex+' exercice'+(st.ex>1?'s':'')+' · '+st.sets+' série'+(st.sets>1?'s':'')+' · '+fmt0(st.vol)+' kg soulevés</p>'+l.map(s=>'<div class="ent" style="--g:'+(COL[catOf(s)]||'var(--ac)')+'"><b>'+esc(s.ex)+'</b><small>'+s.sets.map(x=>fmt(x.kg)+'×'+x.reps).join(' · ')+'</small></div>').join('')+'<button type="button" class="p" id="woclose" style="width:100%;margin-top:12px">Fermer</button></div>');
+  $('#woclose').onclick=closeOv}
 function renderStats(){const d=new Set(S.sessions.map(s=>s.date)).size,n=S.sessions.reduce((a,s)=>a+s.sets.length,0),e=exNames().length;$('#stats').innerHTML=S.sessions.length?`<div>📅 ${d} séance${d>1?'s':''}</div><div>🏋️ ${n} série${n>1?'s':''}</div><div>🔥 ${e} exercice${e>1?'s':''}</div>`:'<div>Prêt pour ta première séance ?</div>'}
 function render(){
-  applyLevel();renderPick();renderStats();renderHist();renderTimer();renderDefis();renderRun();renderProg();renderVol();renderBW();
+  applyLevel();renderPick();renderStats();renderCW();renderHist();renderTimer();renderDefis();renderRun();renderProg();renderVol();renderBW();
   const h=forEx(cur);
   $('#htitle').textContent=cur.trim()?'Progression : '+cur:'Progression';
   if(!h.length){$('#chart').innerHTML='';$('#hist').innerHTML='<p class="empty">Choisis un exercice déjà enregistré, ou enregistre ta première séance pour voir ta courbe.</p>';return}
@@ -623,8 +638,8 @@ $('#save').onclick=()=>{
   const sets=[...document.querySelectorAll('#sets .row')].map(r=>({kg:num(r.querySelector('.kg').value),reps:parseInt(r.querySelector('.rp').value,10)})).filter(x=>x.kg>=0&&x.reps>0);
   if(!name){msg.textContent='Choisis une catégorie puis un exercice.';return}
   if(!sets.length){msg.textContent='Ajoute au moins une série avec une charge et un nombre de reps.';return}
-  custom=false;const so={id:Date.now(),date:$('#date').value||today(),ex:known||name,cat:grp||'',sets},rp=parseInt($('#rpe').value,10);if(lv()!=='d'&&rp>=6)so.rpe=rp;$('#rpe').value='';S.sessions.push(so);
-  persist();msg.textContent='Séance enregistrée.';
+  custom=false;const so={id:Date.now(),date:$('#date').value||today(),ex:known||name,cat:grp||'',sets},rp=parseInt($('#rpe').value,10);if(lv()!=='d'&&rp>=6)so.rpe=rp;$('#rpe').value='';S.sessions.push(so);if(!S.cw)S.cw={t0:Date.now(),ids:[]};S.cw.ids.push(so.id);
+  persist();render();msg.textContent='Exercice ajouté à ta séance. Touche « Terminer la séance » quand tu as fini.';
   $('#sets').dataset.touched='';pick(known||name);
 };
 $('#t1').onclick=()=>showTab('log');
@@ -1567,7 +1582,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 20</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 21</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
@@ -1588,7 +1603,7 @@ async function emailAuth(m){
 function cleanForCloud(){const o=JSON.parse(JSON.stringify(S));const rs=o.runs.slice().sort((a,b)=>b.id-a.id);o.runs.forEach(r=>{delete r.ph});rs.slice(30).forEach(r=>{const x=o.runs.find(q=>q.id===r.id);if(x)x.route=[]});return o}
 function mergeS(a,b){
   const o=Object.assign({},b,a);
-  ['sessions','runs','bets','bw'].forEach(k=>{const m=new Map();(b[k]||[]).forEach(x=>m.set(x.id,x));(a[k]||[]).forEach(x=>m.set(x.id,Object.assign({},m.get(x.id)||{},x)));o[k]=[...m.values()]});
+  ['sessions','runs','bets','bw','wo'].forEach(k=>{const m=new Map();(b[k]||[]).forEach(x=>m.set(x.id,x));(a[k]||[]).forEach(x=>m.set(x.id,Object.assign({},m.get(x.id)||{},x)));o[k]=[...m.values()]});
   ['wk','wkr','wkb'].forEach(k=>{const u={};[b[k]||{},a[k]||{}].forEach(src=>Object.keys(src).forEach(w=>{u[w]=[...new Set([...(u[w]||[]),...src[w]])]}));o[k]=u});
   ['game','profile','pdi'].forEach(k=>{o[k]=Object.assign({},b[k]||{},a[k]||{})});
   o.seen=[...new Set([...(a.seen||[]),...(b.seen||[])])];o.lvl=a.lvl||b.lvl;return o}
@@ -1727,6 +1742,8 @@ function hwShow(r){const m=$('#hwmsg');if(m)m.innerHTML=esc(r.msg)}
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&go){go=0;pb.textContent='📋 2. Importer mes sorties (le Raccourci est terminé)';pb.style.outline='3px solid var(--ac)'}})})();
 render();pick('');
 init();
+try{new ResizeObserver(()=>{const b=$('#rest'),s=$('#restsp');if(b&&s)s.style.height=b.hidden?'0':(b.offsetHeight+14)+'px'}).observe($('#rest'))}catch(e){}
+new MutationObserver(()=>{const b=$('#rest'),s=$('#restsp');if(b&&s)s.style.height=b.hidden?'0':(b.offsetHeight+14)+'px'}).observe($('#rest'),{attributes:true,attributeFilter:['hidden']});
 </script>
 </body>
 </html>
