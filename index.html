@@ -321,6 +321,7 @@ select{width:100%;min-height:48px;font-size:16px;border:1px solid var(--line);bo
 </section>
 <section class="card"><h2 id="rmh">Carte du voyage</h2><div id="jinfo"></div><div id="jmapw"></div></section>
 <section class="card"><h2 id="rwh">Défis de course</h2><div id="rwk"></div></section>
+<section class="card" id="svcard"><h2>⌚ Montre Garmin / Strava</h2><div id="svbox"></div></section>
 <section class="card"><h2>Importer depuis ma montre</h2><p class="st">Exporte ton activité depuis l’app de ta montre au format GPX ou TCX, puis choisis le fichier ici. La distance, la durée, la date et le tracé viennent de la montre. Le sport (course ou vélo) est reconnu automatiquement.</p>
 <input type="file" id="wf" accept=".gpx,.tcx,application/gpx+xml,application/xml,text/xml" multiple style="margin-top:8px"><div class="st" id="wmsg" role="status"></div>
 <details style="margin-top:8px"><summary>Comment obtenir le fichier ?</summary><div class="st">• <b>Garmin Connect</b> (site web) : ouvre l’activité, roue crantée ⚙, « Exporter en GPX » ou « TCX ».<br>• <b>Strava</b> (site web) : ouvre l’activité, menu « ⋯ », « Exporter GPX ».<br>• <b>Polar, Suunto, Coros, Samsung, Fitbit…</b> : cherche « Exporter » dans l’activité, sur leur site ou leur app.<br>• <b>Apple Watch</b> : Apple n’exporte pas directement. Utilise une app comme HealthFit ou RunGap pour obtenir un GPX/TCX.<br>Les doublons (même activité importée deux fois) sont refusés.</div></details></section>
@@ -1493,6 +1494,7 @@ const HELP={
  sauv:['Sauvegarde','Une copie de toutes tes données. Garde-la au cas où tu changes de téléphone.'],
  restaure:['Restaurer','Remets ici une sauvegarde faite avant. Elle remplace tes données actuelles.'],
  montre:['Import montre','Ta montre enregistre ton activité. Exporte-la en fichier GPX ou TCX depuis son app, puis choisis le fichier ici : la distance, la durée et le tracé sont repris tels quels et font avancer ta carte.'],
+ strava:['Montre Garmin','Ta montre Garmin envoie tes sorties à Strava, et Carnet de muscu les récupère toute seule quand tu ouvres l’app : distance, durée et tracé font avancer ta carte. Tu ne fais rien après la première liaison. Les activités saisies à la main dans Strava sont ignorées.'],
  amis:['Amis','Ajoute un ami avec son code, compare vos points, séances et kilomètres de la semaine, et envoyez-vous des encouragements. Tu ne partages que ton pseudo, ton avatar et tes totaux, pas tes photos ni ton historique détaillé.'],
  tonnage:['Kilos soulevés','Le total soulevé ce jour-là : charge × répétitions, tout additionné.']};
 const HELPS=[
@@ -1500,7 +1502,7 @@ const HELPS=[
  ['#tip .tip',0,el=>/Plateau/.test(el.textContent)?'plateau':'surcharge'],['#tip summary',0,'echauf'],['#tip .st',/1RM/,'rm'],['#htitle',0,'progres'],['#hlvl',0,'niveau',1],
  ['#tab-timer h2',/^Chrono/,'chrono'],['#pint > label',/Programmes/,'tabata'],
  ['#tab-def h2',/Défis de la semaine/,'defisem'],['#tab-def h2',/^Jeux/,'jeux'],['#tab-def h2',/Paris/,'paris'],['#lvp',0,'pts'],['#chest',0,'coffre',1],['#wtip b',0,'defjour'],
- ['#rh',0,'gps'],['#rl2',0,el=>/Allure/.test(el.textContent)?'allure':'vitmoy'],['#rl3',0,el=>/max/i.test(el.textContent)?'vitmax':'kmh'],['#rmh',0,()=>RM==='bike'?'carteTour':'carte'],['#rwh',0,'defisrun'],['#tab-run h2',/Séance en salle/,'salle'],['#friendscard h2',0,'amis'],['#tab-run h2',/Importer depuis/,'montre'],['#jinfo .chips',0,'tour'],
+ ['#rh',0,'gps'],['#rl2',0,el=>/Allure/.test(el.textContent)?'allure':'vitmoy'],['#rl3',0,el=>/max/i.test(el.textContent)?'vitmax':'kmh'],['#rmh',0,()=>RM==='bike'?'carteTour':'carte'],['#rwh',0,'defisrun'],['#tab-run h2',/Séance en salle/,'salle'],['#friendscard h2',0,'amis'],['#tab-run h2',/Importer depuis/,'montre'],['#svcard h2',0,'strava'],['#jinfo .chips',0,'tour'],
  ['#volcard h2',0,'volume'],['#bwcard h2',0,'poids'],['#tab-hist h2',/Mes données/,'sauv'],['#tab-hist summary',/Restaurer/,'restaure'],['#hl > .day:first-child h3',0,'tonnage'],
  ['#ovt',0,el=>/Photo/.test(el.textContent)?'photo':/Coffre/.test(el.textContent)?'coffre':/niveau|Bienvenue/i.test(el.textContent)?'niveau':null]];
 function addHelp(){HELPS.forEach(([sel,rx,key,after])=>{document.querySelectorAll(sel).forEach(el=>{if(rx&&!rx.test(el.textContent))return;const k=typeof key==='function'?key(el):key;if(!k||!HELP[k])return;
@@ -1564,7 +1566,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 13</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 14</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
@@ -1655,6 +1657,45 @@ async function removeFriend(id){try{await FB.db.doc('friends/'+CU.uid+'/with/'+i
 async function cheer(id,b){try{await FB.db.doc('cheers/'+id+'/from/'+CU.uid+'_'+today()).set({from:CU.uid,name:FD.me.name,emoji:['👏','🔥','💪'][Math.floor(Math.random()*3)],ts:Date.now()});b.textContent='✓ Envoyé';b.disabled=true}catch(e){b.textContent='Impossible'}}
 
 $('#hacct').onclick=acctOverlay;if($('#havatar'))$('#havatar').onclick=acctOverlay;fbInit();
+/* ---------- montre : synchronisation Strava (Garmin Connect -> Strava -> Carnet) ---------- */
+const SVC=()=>window.APP_CONFIG&&APP_CONFIG.strava&&APP_CONFIG.strava.clientId&&APP_CONFIG.strava.relay?APP_CONFIG.strava:null;
+let SVT=0,SVB=false;
+function decPoly(s){const o=[];let i=0,la=0,lo=0;while(i<s.length){for(const k of[0,1]){let r=0,sh=0,b;do{b=s.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32&&i<=s.length);const d=(r&1)?~(r>>1):(r>>1);if(k)lo+=d;else la+=d}o.push([la/1e5,lo/1e5])}return o}
+function svMsg(t){const m=$('#svmsg');if(m)m.innerHTML=t}
+function svRender(){const b=$('#svbox');if(!b)return;const c=SVC();
+  if(!c){b.innerHTML='<p class="st">La synchronisation automatique n’est pas encore activée dans cette installation (voir STRAVA-SETUP.md). En attendant, l’import de fichier ci-dessous fonctionne.</p>';return}
+  if(S.sv&&S.sv.refresh)b.innerHTML='<p>✓ Relié à Strava'+(S.sv.name?' ('+esc(S.sv.name)+')':'')+'. Tes sorties arrivent à l’ouverture de l’app.</p><button type="button" class="p" id="svnow" style="width:100%">↻ Récupérer mes sorties maintenant</button><button type="button" class="dl" id="svoff" style="width:100%;margin-top:8px">Délier Strava</button><div class="st" id="svmsg" role="status"></div>';
+  else b.innerHTML='<p class="st">Garmin Connect envoie déjà tes activités à Strava si tu le règles une fois (Garmin Connect : Plus > Paramètres > Applications connectées > Strava). Relie ensuite Strava ici.</p><button type="button" class="p" id="svon" style="width:100%">🟠 Relier Strava</button><div class="st" id="svmsg" role="status"></div>';
+  if($('#svon'))$('#svon').onclick=svConnect;if($('#svnow'))$('#svnow').onclick=()=>svSync(true);
+  if($('#svoff'))$('#svoff').onclick=()=>arm($('#svoff'),'Délier Strava ?',()=>{delete S.sv;persist();svRender()})}
+function svConnect(){const c=SVC();if(!c)return;const ru=location.origin+location.pathname;
+  location.href='https://www.strava.com/oauth/authorize?client_id='+encodeURIComponent(c.clientId)+'&redirect_uri='+encodeURIComponent(ru)+'&response_type=code&approval_prompt=auto&scope=activity:read_all&state=svlink'}
+async function svRelay(body){const c=SVC();const r=await fetch(c.relay,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error('relay '+r.status);return r.json()}
+async function svReturn(){const u=new URL(location.href),code=u.searchParams.get('code');if(!code||u.searchParams.get('state')!=='svlink'||!SVC())return false;
+  history.replaceState(null,'',u.origin+u.pathname);showTab('run');
+  try{const r=await svRelay({op:'exchange',code});S.sv={refresh:r.refresh,name:r.name||'',last:Math.floor(Date.now()/1000)-14*86400};persist();svRender();svMsg('Relié ✓ Récupération de tes dernières sorties…');await svSync(true)}
+  catch(e){svRender();svMsg('Liaison impossible pour l’instant. Réessaie dans un moment.')}return true}
+async function svSync(manual){
+  if(!SVC()||!S.sv||!S.sv.refresh||SVB)return;if(!manual&&Date.now()-SVT<300000)return;
+  if(typeof RUN!=='undefined'&&RUN)return;SVB=true;SVT=Date.now();if(manual)svMsg('Recherche de nouvelles sorties…');
+  try{const r=await svRelay({op:'sync',refresh:S.sv.refresh,after:S.sv.last||Math.floor(Date.now()/1000)-14*86400});
+    S.sv.refresh=r.refresh||S.sv.refresh;let n=0,newest=S.sv.last||0,lastR=null,lastPk=0,lastBike=false;const out=[];
+    for(const a of (r.acts||[]).sort((x,y)=>x.t0-y.t0)){
+      newest=Math.max(newest,Math.floor(a.t0/1000));
+      if(a.manual||!(a.dist>0)||!(a.dur>0))continue;
+      const bike=/Ride/.test(a.type)&&!/EBike/.test(a.type)?true:/^(Run|TrailRun|VirtualRun)$/.test(a.type)?false:null;if(bike===null)continue;
+      const km=a.dist/1000,mn=a.dur/60,v=km/mn*60,date=new Date(a.t0).toLocaleDateString('sv');
+      if(km<.3||mn<3||v>(bike?70:22.5)||v<(bike?6:3))continue;
+      if(S.runs.some(q=>q.sid===a.id||(a.t0&&q.t0===a.t0))||S.runs.some(q=>!!q.v===bike&&q.date===date&&Math.abs(q.dist-a.dist)<80&&Math.abs(q.dur-a.dur)<45))continue;
+      const pk=bike?bikeKm():totalKm(),q={id:Date.now()+n,date,dist:Math.round(a.dist),dur:Math.max(1,Math.round(a.dur)),route:a.poly?down(decPoly(a.poly)):[],src:'strava',sid:a.id,v:bike?1:0,t0:a.t0};
+      S.runs.push(q);n++;lastR=q;lastPk=pk;lastBike=bike;out.push((bike?'🚴 ':'🏃 ')+fmt(Math.round(km*100)/100)+' km ('+dateFr(date)+')')}
+    S.sv.last=newest;persist();
+    if(n){render();svMsg('✓ '+n+' sortie'+(n>1?'s':'')+' importée'+(n>1?'s':'')+' : '+out.map(esc).join(', '));if(manual&&lastR){showTab(lastBike?'bike':'run');runSummary(lastR,lastPk)}}
+    else if(manual)svMsg('Aucune nouvelle sortie. Vérifie que ta montre a bien envoyé l’activité à Strava.')}
+  catch(e){if(manual)svMsg('Synchronisation impossible pour l’instant. Réessaie dans un moment.')}
+  SVB=false}
+svRender();svReturn().then(()=>svSync(false));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')svSync(false)});
 render();pick('');
 init();
 </script>

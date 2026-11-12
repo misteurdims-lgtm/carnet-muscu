@@ -2,6 +2,8 @@
 window.APP_CONFIG = {
   /* Boutons de connexion affichés (l'e-mail est toujours là). Passe à true une fois le fournisseur activé dans Firebase. */
   providers: { google: true, facebook: false },
+  /* Synchronisation montre via Strava : voir STRAVA-SETUP.md */
+  strava: { clientId: "", relay: "" },
   firebase: {
     apiKey: "AIzaSyBLwE1stnJtj7sCtBydn_OnD3QUQlQjorc",
     authDomain: "carnet-muscu-9bff5.firebaseapp.com",
