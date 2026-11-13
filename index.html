@@ -433,7 +433,7 @@ const PRESETS={
 'Abdos':['Crunch au sol','Crunch poulie','Crunch machine','Crunch inversé','Relevé de jambes suspendu','Relevé de genoux suspendu','Roue abdominale','Gainage lesté','Gainage latéral','Russian twist','Rotation poulie','Sit-up lesté'],
 'Avant-bras':['Curl poignets barre','Curl poignets haltère','Curl inversé barre EZ','Extension poignets haltère','Farmer walk','Suspension à la barre']};
 const COL={'Pecs':'#c62f4a','Dos':'#1f6fd1','Épaules':'#b86a00','Biceps':'#0f8a52','Triceps':'#7a3fd1','Jambes':'#0b7f8f','Abdos':'#8a5a2b','Avant-bras':'#667085'};
-let grp='',custom=false,hf='';
+let grp='',custom=false,hf='',allG=false;
 function exOptions(c){
   const l=PRESETS[c].slice(),all=Object.values(PRESETS).flat().map(key);
   exNames().forEach(n=>{const s=S.sessions.find(x=>key(x.ex)===key(n));
@@ -443,9 +443,9 @@ function exOptions(c){
 function closeDD(){document.querySelectorAll('.dlist').forEach(l=>l.hidden=true);document.querySelectorAll('.dbtn').forEach(b=>b.setAttribute('aria-expanded','false'))}
 function toggleDD(l,b){const o=l.hidden;closeDD();if(o){l.hidden=false;b.setAttribute('aria-expanded','true')}}
 function renderPick(){
-  $('#tc').textContent=grp||'Choisis une catégorie…';
+  $('#tc').textContent=grp||(allG?'Tous les muscles':'Choisis une catégorie…');
   ['#bc','#bx'].forEach(s=>{const b=$(s);b.style.setProperty('--g',grp?COL[grp]:'');b.style.borderColor=grp?COL[grp]:'';b.classList.toggle('on',!!grp)});
-  $('#lc2').innerHTML=Object.keys(PRESETS).map(g=>`<button type="button" role="option" data-g="${g}" class="${g===grp?'sel':''}" style="border-left:6px solid ${COL[g]}">${g}</button>`).join('');
+  $('#lc2').innerHTML=`<button type="button" role="option" data-g="" data-all="1" class="${allG&&!grp?'sel':''}" style="border-left:6px solid var(--ac)">✨ Tous les muscles (enchaîner plusieurs groupes)</button>`+Object.keys(PRESETS).map(g=>`<button type="button" role="option" data-g="${g}" class="${g===grp?'sel':''}" style="border-left:6px solid ${COL[g]}">${g}</button>`).join('');
   const show=grp?[grp]:Object.keys(PRESETS);
   $('#lx').innerHTML=show.map(g=>(grp?'':`<div class="gh" style="--g:${COL[g]}">${g}</div>`)+exOptions(g).map(n=>`<button type="button" role="option" data-g="${g}" data-n="${esc(n)}" class="${cur&&key(n)===key(cur)?'sel':''}" style="border-left:6px solid ${COL[g]}">${esc(n)}</button>`).join('')).join('')+(grp?`<button type="button" data-other="1" style="border-left:6px solid ${COL[grp]}">+ Autre exercice…</button>`:'');
   $('#tx').textContent=cur||(custom?'Autre exercice…':'Choisis un exercice…');
@@ -590,7 +590,7 @@ function renderHist(){
   $('#hl').querySelectorAll('[data-rw]').forEach(b=>b.onclick=()=>{const w=S.wo.find(x=>String(x.id)===b.dataset.rw);if(w)redoWorkout(S.sessions.filter(s=>w.ids.includes(s.id)),'Refaire la séance du '+dateFr(w.date))});
   $('#hl').querySelectorAll('[data-gd]').forEach(b=>b.onclick=()=>groupDay(b.dataset.gd));
   $('#hl').querySelectorAll('[data-rd]').forEach(b=>b.onclick=()=>redoWorkout(S.sessions.filter(s=>s.date===b.dataset.rd),'Refaire la séance du '+dateFr(b.dataset.rd)));
-  $('#hl').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const s=S.sessions.find(x=>String(x.id)===b.dataset.r);if(!s)return;grp=catOf(s);custom=false;$('#sets').dataset.touched='';showTab('log');pick(s.ex)});
+  $('#hl').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const s=S.sessions.find(x=>String(x.id)===b.dataset.r);if(!s)return;allG=false;grp=catOf(s);custom=false;$('#sets').dataset.touched='';showTab('log');pick(s.ex)});
 }
 
 
@@ -639,8 +639,8 @@ $('#sets').addEventListener('input',()=>{$('#sets').dataset.touched='1'});
 $('#ex').addEventListener('change',e=>{$('#sets').dataset.touched='';pick(e.target.value)});
 $('#bc').onclick=()=>toggleDD($('#lc2'),$('#bc'));
 $('#bx').onclick=()=>toggleDD($('#lx'),$('#bx'));
-$('#lc2').onclick=e=>{const b=e.target.closest('button');if(!b)return;grp=b.dataset.g;custom=false;closeDD();$('#sets').dataset.touched='';pick('');toggleDD($('#lx'),$('#bx'))};
-$('#lx').onclick=e=>{const b=e.target.closest('button');if(!b)return;closeDD();$('#sets').dataset.touched='';if(b.dataset.other){custom=true;pick('');$('#ex').focus();return}grp=b.dataset.g;custom=false;pick(b.dataset.n)};
+$('#lc2').onclick=e=>{const b=e.target.closest('button');if(!b)return;grp=b.dataset.g;allG=!!b.dataset.all;custom=false;closeDD();$('#sets').dataset.touched='';pick('');toggleDD($('#lx'),$('#bx'))};
+$('#lx').onclick=e=>{const b=e.target.closest('button');if(!b)return;closeDD();$('#sets').dataset.touched='';if(b.dataset.other){custom=true;pick('');$('#ex').focus();return}if(!allG)grp=b.dataset.g;custom=false;pick(b.dataset.n)};
 document.addEventListener('click',e=>{if(e.target.isConnected&&!e.target.closest('.dd'))closeDD()});
 $('#save').onclick=()=>{
   const name=$('#ex').value.trim(),msg=$('#msg');
@@ -704,7 +704,7 @@ function renderDefis(){
   S.sessions.filter(s=>s.date>=since).forEach(s=>{const g=catOf(s);if(g in g7)g7[g]+=s.sets.length});
   const mn=Object.keys(g7).sort((a,b)=>g7[a]-g7[b])[0];
   $('#wtip').innerHTML=S.sessions.length?`<b>Défi du jour : ${mn}</b><br>${g7[mn]===0?'Aucune série':g7[mn]+' série'+(g7[mn]>1?'s':'')} sur ce muscle ces 7 derniers jours : c’est ton plus délaissé.<br><button type="button" id="wgo">Travailler ${mn.toLowerCase()}</button>`:'Note ta première séance pour débloquer le défi du jour.';
-  if($('#wgo'))$('#wgo').onclick=()=>{grp=mn;custom=false;$('#sets').dataset.touched='';showTab('log');pick('')};
+  if($('#wgo'))$('#wgo').onclick=()=>{allG=false;grp=mn;custom=false;$('#sets').dataset.touched='';showTab('log');pick('')};
   $('#gb1').textContent='Record : '+((S.game.plate||{}).best||0)+' pts';
   const tp=S.game.tempo||{};$('#gb2').textContent=Object.keys(tp).length?'Records : '+Object.keys(SPD).filter(k=>tp[k]!=null).map(k=>SPD[k][0]+' '+tp[k]+' %').join(' · '):'Pas encore joué';
   renderBets();
@@ -1446,7 +1446,7 @@ function extraTip(name){
     if(ws[0]===ws[1]&&ws[1]===ws[2]&&rs[2]<=rs[0])o+=`<div class="tip">📉 Plateau : 3 séances sans progrès à ${fmt(ws[2])} kg. Essaie une décharge : ${fmt(Math.round(ws[2]*.9/2.5)*2.5)} kg × 10 reps cette fois, puis reviens plus fort.</div>`}
   return o}
 function cueTip(){return lv()==='d'&&grp&&CUES[grp]?`<div class="st">💡 Technique : ${CUES[grp]}</div>`:''}
-function loadEx(cat,ex){grp=cat;custom=false;$('#sets').dataset.touched='';pick(ex);const b=$('#bc');if(b&&b.scrollIntoView)b.scrollIntoView({block:'start',behavior:'smooth'})}
+function loadEx(cat,ex){allG=false;grp=cat;custom=false;$('#sets').dataset.touched='';pick(ex);const b=$('#bc');if(b&&b.scrollIntoView)b.scrollIntoView({block:'start',behavior:'smooth'})}
 function renderProg(){
   const L=lv(),ids=progIds(),h0=S.sessions.length;if(!S.prog||(S.prog!=='last'&&!(S.prog==='redo'&&S.redo)&&!ids.includes(S.prog)))S.prog=L==='d'||!h0?'fb':'last';
   $('#guide').innerHTML=L==='d'?`<details ${h0?'':'open'}><summary><b>Par où commencer ?</b></summary><ol class="gd"><li>Choisis le programme « Full body » ci-dessous : 3 séances par semaine, jamais deux jours de suite.</li><li>Touche un exercice : l’app te propose les charges. La première fois, prends léger : tu dois pouvoir faire 12 répétitions en gardant 2 répétitions « en réserve » (tu pourrais en faire 2 de plus).</li><li><b>Surcharge progressive</b> = faire un tout petit peu plus à chaque séance : 1 répétition de plus, puis +2,5 kg quand toutes tes séries atteignent 12 reps. L’app te le suggère.</li><li>Repos entre les séries : environ 1 min 30. Une douleur vive = tu t’arrêtes.</li></ol></details>`:'';
@@ -1593,7 +1593,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 24</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 25</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
