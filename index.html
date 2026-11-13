@@ -255,6 +255,7 @@ html{touch-action:manipulation}button,.stp,.rstep,.chips button,label{touch-acti
 <div id="restsp"></div><div class="rest" id="rest" hidden role="timer"><div class="rtop"><span id="rlab">Repos en cours</span><span id="rnext"></span></div><div class="rbig" id="rbig">1:30</div><div class="bar"><i id="rbar"></i></div><div class="rbtn"><button type="button" id="rm">−15 s</button><button type="button" class="p" id="rgo">▶ Commencer la série 2</button><button type="button" id="rp">+15 s</button></div></div>
 <section class="card">
 <h2>Nouvelle série</h2>
+<div id="parkbar"></div>
 <label>1. Catégorie (partie du corps)</label>
 <div class="dd"><button type="button" class="dbtn" id="bc" aria-haspopup="listbox" aria-expanded="false"><span id="tc">Choisis une catégorie…</span><span aria-hidden="true">▾</span></button><div class="dlist" id="lc2" role="listbox" hidden></div></div>
 <label style="margin-top:10px">2. Exercice</label>
@@ -267,6 +268,7 @@ html{touch-action:manipulation}button,.stp,.rstep,.chips button,label{touch-acti
 <div style="margin-top:12px" id="sets"></div>
 <div id="rpew" hidden style="margin-top:10px"><label for="rpe">Effort ressenti (RPE) — optionnel</label><select id="rpe"><option value="">—</option><option value="6">6 · facile (4 reps en réserve)</option><option value="7">7 · 3 reps en réserve</option><option value="8">8 · 2 reps en réserve</option><option value="9">9 · 1 rep en réserve</option><option value="10">10 · échec</option></select></div>
 <button id="add" type="button">Ajouter une série</button>
+<button id="par" type="button" class="ghost" style="margin-top:8px;width:100%">➕ Ajouter un 2e exercice en parallèle</button>
 <div class="rsel"><label>⏱ Temps de repos entre les séries</label>
 <div class="rstep"><button type="button" id="sm" aria-label="Moins 15 secondes">−</button><div><b id="sv">1:30</b><small id="sr"></small></div><button type="button" id="sp" aria-label="Plus 15 secondes">+</button></div>
 <div class="chips" id="spre"></div>
@@ -411,7 +413,7 @@ function addRow(kg='',reps=''){
 }
 
 function pick(name){
-  if(T.st!=='idle')resetT();
+  if(T.st!=='idle'&&!keepT)resetT();
   cur=name;$('#ex').value=name;
   const s=suggestion(name),h=forEx(name);
   const t0=s?`<div class="tip">${s.txt}</div>`:(name.trim()?'<div class="tip">Premier enregistrement de cet exercice : note ta charge de départ.</div>':'');$('#tip').innerHTML=t0+(name.trim()?extraTip(name)+cueTip():'');
@@ -642,6 +644,19 @@ $('#bx').onclick=()=>toggleDD($('#lx'),$('#bx'));
 $('#lc2').onclick=e=>{const b=e.target.closest('button');if(!b)return;grp=b.dataset.g;allG=!!b.dataset.all;custom=false;closeDD();$('#sets').dataset.touched='';pick('');toggleDD($('#lx'),$('#bx'))};
 $('#lx').onclick=e=>{const b=e.target.closest('button');if(!b)return;closeDD();$('#sets').dataset.touched='';if(b.dataset.other){custom=true;pick('');$('#ex').focus();return}if(!allG)grp=b.dataset.g;custom=false;pick(b.dataset.n)};
 document.addEventListener('click',e=>{if(e.target.isConnected&&!e.target.closest('.dd'))closeDD()});
+
+let park=[],keepT=false;
+function capDraft(){const name=$('#ex').value.trim()||cur;if(!name)return null;
+  return{name,grp,allG,custom,rows:[...document.querySelectorAll('#sets .row')].map(x=>({kg:x.querySelector('.kg').value,reps:x.querySelector('.rp').value,done:x.classList.contains('done')}))}}
+function loadDraft(d){keepT=true;grp=d.grp;allG=d.allG;custom=d.custom;$('#sets').innerHTML='';
+  d.rows.forEach(x=>{addRow(x.kg,x.reps);if(x.done){const r=$('#sets').lastElementChild;r.classList.add('done');r.querySelector('.dn').textContent='✓ Série faite'}});
+  $('#sets').dataset.touched='1';pick(d.name);keepT=false;if(d.custom)$('#ex').value=d.name}
+function renderPark(){const b=$('#parkbar');if(!b)return;
+  b.innerHTML=park.length?'<div class="st" style="margin:0 0 8px">⏸ En parallèle (touche pour reprendre) :</div><div class="chips">'+park.map((d,i)=>`<button type="button" data-pk="${i}">${esc(d.name)} · ${d.rows.length} série${d.rows.length>1?'s':''}</button>`).join('')+'</div>':'';
+  b.querySelectorAll('[data-pk]').forEach(x=>x.onclick=()=>{const i=+x.dataset.pk,d=park[i],c=capDraft();if(c)park[i]=c;else park.splice(i,1);loadDraft(d);renderPark();window.scrollTo({top:0,behavior:'smooth'})})}
+$('#par').onclick=()=>{const c=capDraft();if(!c){$('#msg').textContent='Choisis d’abord un premier exercice, puis ajoute le 2e en parallèle.';return}
+  park.push(c);cur='';grp='';allG=false;custom=false;$('#ex').value='';$('#sets').dataset.touched='';keepT=true;pick('');keepT=false;renderPark();
+  $('#msg').textContent='Premier exercice mis de côté. Choisis le 2e : tu pourras alterner en touchant le premier ci-dessus.'};
 $('#save').onclick=()=>{
   const name=$('#ex').value.trim(),msg=$('#msg');
   const known=exNames().find(n=>key(n)===key(name));
@@ -651,6 +666,7 @@ $('#save').onclick=()=>{
   custom=false;const so={id:Date.now(),date:$('#date').value||today(),ex:known||name,cat:grp||'',sets},rp=parseInt($('#rpe').value,10);if(lv()!=='d'&&rp>=6)so.rpe=rp;$('#rpe').value='';S.sessions.push(so);if(!S.cw)S.cw={t0:Date.now(),ids:[]};S.cw.ids.push(so.id);
   persist();render();msg.textContent='Exercice ajouté à ta séance. Touche « Terminer la séance » quand tu as fini.';
   $('#sets').dataset.touched='';pick(known||name);
+  if(park.length){loadDraft(park.shift());msg.textContent='Exercice ajouté. Voici l’exercice mis en parallèle.'}renderPark();
 };
 $('#t1').onclick=()=>showTab('log');
 $('#spre').innerHTML=[30,45,60,90,120,180].map(s=>`<button type="button" data-s="${s}">${mmss(s)}</button>`).join('');
@@ -1593,7 +1609,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 25</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 26</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
