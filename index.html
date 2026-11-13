@@ -255,7 +255,7 @@ html{touch-action:manipulation}button,.stp,.rstep,.chips button,label{touch-acti
 <div id="restsp"></div><div class="rest" id="rest" hidden role="timer"><div class="rtop"><span id="rlab">Repos en cours</span><span id="rnext"></span></div><div class="rbig" id="rbig">1:30</div><div class="bar"><i id="rbar"></i></div><div class="rbtn"><button type="button" id="rm">−15 s</button><button type="button" class="p" id="rgo">▶ Commencer la série 2</button><button type="button" id="rp">+15 s</button></div></div>
 <section class="card">
 <h2>Nouvelle série</h2>
-<div id="parkbar"></div>
+<div id="editbar"></div><div id="parkbar"></div>
 <label>1. Catégorie (partie du corps)</label>
 <div class="dd"><button type="button" class="dbtn" id="bc" aria-haspopup="listbox" aria-expanded="false"><span id="tc">Choisis une catégorie…</span><span aria-hidden="true">▾</span></button><div class="dlist" id="lc2" role="listbox" hidden></div></div>
 <label style="margin-top:10px">2. Exercice</label>
@@ -592,12 +592,13 @@ function renderHist(){
     const vol=days[d].reduce((a,s)=>a+s.sets.reduce((b,x)=>b+x.kg*x.reps,0),0),
       nm=new Date(d+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
     const ids=new Set(days[d].map(s=>s.id)),wos=(S.wo||[]).filter(w=>w.ids.some(i=>ids.has(i))),badge=wos.map(w=>{const ss=days[d].filter(s=>w.ids.includes(s.id)),q=woStats(ss);return `<div class="st">🏁 Séance complète : ${w.est&&w.t1-w.t0<120000?'':minTxt(w.t1-w.t0)+' · '}${q.ex} exercice${q.ex>1?'s':''} · ${q.sets} série${q.sets>1?'s':''}</div>`}).join(''),done=wos.map(w=>`<button type="button" data-rw="${w.id}">🔁 Refaire cette séance</button>`).join(''),und=days[d].some(s=>!inWo(s.id))?`<button type="button" data-gd="${d}">📦 Regrouper en une séance</button><button type="button" data-rd="${d}">🔁 Refaire cette journée</button>`:'';
-    return `<div class="day"><h3>${nm} <small>· ${fmt(Math.round(vol))} kg soulevés</small></h3>${badge}<div>${done}${und}</div><details class="grp"><summary>📋 ${days[d].length} exercice${days[d].length>1?'s':''} · ${days[d].reduce((a,s)=>a+s.sets.length,0)} séries — voir le détail</summary>`+days[d].map(s=>`<div class="ent" style="--g:${COL[catOf(s)]||'var(--ac)'}"><b>${esc(s.ex)}</b><small>${s.sets.length} série${s.sets.length>1?'s':''} : ${s.sets.map(x=>(x.lb!=null?fmt(x.lb)+' lb ('+fmt(Math.round(x.kg*10)/10)+' kg)':fmt(x.kg))+'×'+x.reps).join(' · ')}</small><button type="button" data-r="${s.id}">Refaire</button><button type="button" class="dl" data-d="${s.id}">Supprimer</button></div>`).join('')+`<button type="button" class="dl" data-day="${d}" style="margin-left:0">Supprimer ce jour</button></details></div>`}).join('');
+    return `<div class="day"><h3>${nm} <small>· ${fmt(Math.round(vol))} kg soulevés</small></h3>${badge}<div>${done}${und}</div><details class="grp"><summary>📋 ${days[d].length} exercice${days[d].length>1?'s':''} · ${days[d].reduce((a,s)=>a+s.sets.length,0)} séries — voir le détail</summary>`+days[d].map(s=>`<div class="ent" style="--g:${COL[catOf(s)]||'var(--ac)'}"><b>${esc(s.ex)}</b><small>${s.sets.length} série${s.sets.length>1?'s':''} : ${s.sets.map(x=>(x.lb!=null?fmt(x.lb)+' lb ('+fmt(Math.round(x.kg*10)/10)+' kg)':fmt(x.kg))+'×'+x.reps).join(' · ')}</small><button type="button" data-r="${s.id}">Refaire</button><button type="button" data-e="${s.id}">✏️ Modifier</button><button type="button" class="dl" data-d="${s.id}">Supprimer</button></div>`).join('')+`<button type="button" class="dl" data-day="${d}" style="margin-left:0">Supprimer ce jour</button></details></div>`}).join('');
   $('#hl').querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>arm(b,'Confirmer ?',()=>delSessions(s=>s.date===b.dataset.day&&(!hf||catOf(s)===hf))));
   $('#hl').querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>arm(b,'Confirmer ?',()=>delSessions(s=>String(s.id)===b.dataset.d)));
   $('#hl').querySelectorAll('[data-rw]').forEach(b=>b.onclick=()=>{const w=S.wo.find(x=>String(x.id)===b.dataset.rw);if(w)redoWorkout(S.sessions.filter(s=>w.ids.includes(s.id)),'Refaire la séance du '+dateFr(w.date))});
   $('#hl').querySelectorAll('[data-gd]').forEach(b=>b.onclick=()=>groupDay(b.dataset.gd));
   $('#hl').querySelectorAll('[data-rd]').forEach(b=>b.onclick=()=>redoWorkout(S.sessions.filter(s=>s.date===b.dataset.rd),'Refaire la séance du '+dateFr(b.dataset.rd)));
+  $('#hl').querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>editSession(+b.dataset.e));
   $('#hl').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const s=S.sessions.find(x=>String(x.id)===b.dataset.r);if(!s)return;allG=false;grp=catOf(s);custom=false;$('#sets').dataset.touched='';showTab('log');pick(s.ex)});
 }
 
@@ -654,6 +655,16 @@ document.addEventListener('click',e=>{if(e.target.isConnected&&!e.target.closest
 function unsaved(){if(!($('#ex').value.trim()||cur))return false;const rows=[...document.querySelectorAll('#sets .row')];
   return rows.some(x=>x.classList.contains('done'))||($('#sets').dataset.touched==='1'&&rows.some(x=>num(x.querySelector('.kg').value)>0&&parseInt(x.querySelector('.rp').value,10)>0))}
 function blockSwitch(){closeDD();$('#msg').textContent='⚠️ Enregistre d’abord ta série (bouton « Enregistrer ») avant de changer d’exercice. Pour alterner, utilise « ➕ Exercice en parallèle ».';const s=$('#save');if(s&&s.scrollIntoView)s.scrollIntoView({block:'center',behavior:'smooth'});return true}
+
+let editId=null;
+function renderEdit(){const b=$('#editbar');if(!b)return;const s=editId&&S.sessions.find(x=>x.id===editId);
+  b.innerHTML=s?`<div class="gps" style="margin-bottom:10px">✏️ Modification de <b>${esc(s.ex)}</b> (${esc(s.date)}). « Enregistrer » remplace l’ancienne version. Pour corriger l’unité, touche kg ou lb : les chiffres restent les mêmes, seule l’unité change.<br><button type="button" id="ecancel" style="margin-top:8px">Annuler la modification</button></div>`:'';
+  if($('#ecancel'))$('#ecancel').onclick=()=>{editId=null;cur='';$('#ex').value='';$('#sets').dataset.touched='';pick('');renderEdit()}}
+function editSession(id){const s=S.sessions.find(x=>x.id===id);if(!s)return;
+  if(editId!==id&&unsaved()){const c=capDraft();if(c){park.push(c);renderPark()}}
+  editId=id;allG=false;grp=s.cat||catOf(s);custom=false;keepT=true;UNIT=s.u==='lb'?'lb':'kg';paintUnit();
+  $('#sets').innerHTML='';s.sets.forEach(x=>addRow(fmt(UNIT==='lb'&&x.lb!=null?x.lb:x.kg),x.reps));
+  $('#sets').dataset.touched='1';pick(s.ex);keepT=false;$('#date').value=s.date;renderEdit();showTab('log');window.scrollTo({top:0,behavior:'smooth'})}
 let park=[],keepT=false;
 function capDraft(){const name=$('#ex').value.trim()||cur;if(!name)return null;
   return{name,grp,allG,custom,u:UNIT,rows:[...document.querySelectorAll('#sets .row')].map(x=>({kg:x.querySelector('.kg').value,reps:x.querySelector('.rp').value,done:x.classList.contains('done')}))}}
@@ -663,7 +674,7 @@ function loadDraft(d){keepT=true;UNIT=d.u||'kg';paintUnit();grp=d.grp;allG=d.all
 function renderPark(){const b=$('#parkbar');if(!b)return;
   b.innerHTML=park.length?'<div class="st" style="margin:0 0 8px">⏸ En parallèle (touche pour reprendre) :</div><div class="chips">'+park.map((d,i)=>`<button type="button" data-pk="${i}">${esc(d.name)} · ${d.rows.length} série${d.rows.length>1?'s':''}</button>`).join('')+'</div>':'';
   b.querySelectorAll('[data-pk]').forEach(x=>x.onclick=()=>{const i=+x.dataset.pk,d=park[i],c=capDraft();if(c)park[i]=c;else park.splice(i,1);loadDraft(d);renderPark();window.scrollTo({top:0,behavior:'smooth'})})}
-$('#unitbar').querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>setUnit(b.dataset.u,true));paintUnit();
+$('#unitbar').querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>setUnit(b.dataset.u,!editId));paintUnit();
 $('#par').onclick=()=>{const c=capDraft();if(!c){$('#msg').textContent='Choisis d’abord un premier exercice, puis ajoute le 2e en parallèle.';return}
   park.push(c);cur='';grp='';allG=false;custom=false;$('#ex').value='';$('#sets').dataset.touched='';keepT=true;pick('');keepT=false;renderPark();
   $('#msg').textContent='Premier exercice mis de côté. Choisis le 2e : tu pourras alterner en touchant le premier ci-dessus.'};
@@ -673,7 +684,8 @@ $('#save').onclick=()=>{
   let sets=[...document.querySelectorAll('#sets .row')].map(r=>({kg:num(r.querySelector('.kg').value),reps:parseInt(r.querySelector('.rp').value,10)})).filter(x=>x.kg>=0&&x.reps>0);const unitUsed=UNIT;if(unitUsed==='lb')sets=sets.map(x=>({kg:Math.round(x.kg/2.20462*100)/100,reps:x.reps,lb:x.kg}));
   if(!name){msg.textContent='Choisis une catégorie puis un exercice.';return}
   if(!sets.length){msg.textContent='Ajoute au moins une série avec une charge et un nombre de reps.';return}
-  custom=false;const so={id:Date.now(),date:$('#date').value||today(),ex:known||name,cat:grp||'',sets},rp=parseInt($('#rpe').value,10);if(lv()!=='d'&&rp>=6)so.rpe=rp;$('#rpe').value='';if(unitUsed==='lb')so.u='lb';S.unit=S.unit||{};S.unit[key(so.ex)]=unitUsed;S.sessions.push(so);if(!S.cw)S.cw={t0:Date.now(),ids:[]};S.cw.ids.push(so.id);
+  custom=false;const so={id:Date.now(),date:$('#date').value||today(),ex:known||name,cat:grp||'',sets},rp=parseInt($('#rpe').value,10);if(lv()!=='d'&&rp>=6)so.rpe=rp;$('#rpe').value='';if(unitUsed==='lb')so.u='lb';S.unit=S.unit||{};S.unit[key(so.ex)]=unitUsed;if(editId){const old=S.sessions.find(x=>x.id===editId);if(old){so.id=old.id;if(old.rpe&&!so.rpe)so.rpe=old.rpe;S.sessions[S.sessions.indexOf(old)]=so}else S.sessions.push(so);editId=null;persist();render();renderEdit();msg.textContent='✅ Séance modifiée.';$('#sets').dataset.touched='';pick(known||name);return}
+  S.sessions.push(so);if(!S.cw)S.cw={t0:Date.now(),ids:[]};S.cw.ids.push(so.id);
   persist();render();msg.textContent='Exercice ajouté à ta séance. Touche « Terminer la séance » quand tu as fini.';
   $('#sets').dataset.touched='';pick(known||name);
   if(park.length){loadDraft(park.shift());msg.textContent='Exercice ajouté. Voici l’exercice mis en parallèle.'}renderPark();
@@ -1619,7 +1631,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 29</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 30</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
