@@ -364,7 +364,8 @@ const kgv=v=>String(v).trim()===''?0:num(v);
 const sx=x=>(x.kg>0?(x.lb!=null?fmt(x.lb)+' lb ('+fmt(Math.round(x.kg*10)/10)+' kg)':fmt(x.kg)):'PDC')+'×'+x.reps;
 
 try{const l=localStorage.getItem(LS);if(l)S=JSON.parse(l)}catch(e){}
-function norm(){if(S&&(!S.cw||!Array.isArray(S.cw.ids)))S.cw=null;if(S&&!Array.isArray(S.wo))S.wo=[];if(!S||!Array.isArray(S.sessions))S={sessions:[]};if(!Array.isArray(S.bets))S.bets=[];if(!Array.isArray(S.runs))S.runs=[];if(!S.wkr||typeof S.wkr!=='object'||Array.isArray(S.wkr))S.wkr={};if(!S.wk||typeof S.wk!=='object'||Array.isArray(S.wk))S.wk={};if(!Array.isArray(S.bw))S.bw=[];if(!S.wkb||typeof S.wkb!=='object'||Array.isArray(S.wkb))S.wkb={};if(!S.profile||typeof S.profile!=='object')S.profile={};if(!Array.isArray(S.seen))S.seen=[];if(!S.game||typeof S.game!=='object')S.game={}}
+function norm(){if(S&&(!S.cw||!Array.isArray(S.cw.ids)))S.cw=null;if(S&&!Array.isArray(S.wo))S.wo=[];if(!S||!Array.isArray(S.sessions))S={sessions:[]};if(!Array.isArray(S.bets))S.bets=[];if(!Array.isArray(S.runs))S.runs=[];if(!S.wkr||typeof S.wkr!=='object'||Array.isArray(S.wkr))S.wkr={};if(!S.wk||typeof S.wk!=='object'||Array.isArray(S.wk))S.wk={};if(!Array.isArray(S.bw))S.bw=[];if(!S.wkb||typeof S.wkb!=='object'||Array.isArray(S.wkb))S.wkb={};if(!S.profile||typeof S.profile!=='object')S.profile={};if(!Array.isArray(S.seen))S.seen=[];if(!S.game||typeof S.game!=='object')S.game={}
+  if(!S.m31){let ch=0;S.sessions.forEach(s=>{if(s&&Array.isArray(s.sets)&&isBW(s.ex)&&!/lest/i.test(s.ex))s.sets.forEach(x=>{if(x&&x.kg>0){x.okg=x.kg;x.kg=0;delete x.lb;ch=1}})});S.m31=1;if(ch)try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}}
 norm();
 
 function persist(){
@@ -1636,7 +1637,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 31</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 32</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
