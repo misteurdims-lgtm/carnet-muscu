@@ -309,10 +309,12 @@ input,select{border-radius:12px}
 #hf button::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--g);margin-right:6px;vertical-align:middle}
 #hf button.on{background:var(--g);border-color:var(--g);color:#fff}#hf button.on::before{background:#fff}
 .bar{height:8px;border-radius:999px;background:var(--bg);overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;border-radius:999px}
+.topsite{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff;background:linear-gradient(90deg,#ff7a18,#e8453c 60%,#b8236b);border-radius:18px;padding:8px 10px 8px 8px;margin-bottom:10px;box-shadow:0 6px 18px rgba(232,69,60,.28)}.topsite .tsl{flex:none;width:40px;height:40px;border-radius:12px;background:#fff;color:#e8453c;font:800 16px "Barlow Condensed",sans-serif;display:flex;align-items:center;justify-content:center}.topsite .tst{flex:1;min-width:0;line-height:1.15}.topsite .tst b{display:block;font-size:16px}.topsite .tst small{display:block;font-size:12.5px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.topsite .tsg{flex:none;background:rgba(255,255,255,.2);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px}
 </style>
 </head>
 <body>
 <main>
+<a class="topsite" href="https://2m2sport.fr/?utm_source=carnet-muscu&utm_medium=app&utm_campaign=bandeau" target="_blank" rel="noopener"><span class="tsl">2m²</span><span class="tst"><b>2m2sport.fr</b><small>Le sport à la maison, en 2 m²</small></span><span class="tsg">Visiter →</span></a>
 <header class="hero"><button type="button" id="havatar" aria-label="Mon compte"></button><div class="hrow"><div><h1>Carnet de muscu</h1>
 <p>Note tes charges, bats ton record à la séance suivante.</p></div><button type="button" class="avbtn" id="hav" aria-label="Mon profil et mes récompenses"></button></div><div class="stats" id="stats"></div><button type="button" class="lvlb" id="hlvl"></button> <button type="button" class="lvlb" id="hacct">☁ Se connecter</button></header>
 <nav class="tabs"><button type="button" id="t1" class="on">Séance</button><button type="button" id="t3">Chrono</button><button type="button" id="t4">Défis</button><button type="button" id="t5">Footing</button><button type="button" id="t6">Vélo</button></nav>
@@ -1718,7 +1720,7 @@ async function signIn(k){
   try{const pr=mkProvider(k),sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;try{await FB.auth.signInWithPopup(pr);if(typeof closeOv==='function'&&!$('#ov').hidden&&$('#ovt').textContent==='Mon compte')closeOv()}catch(e){if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))await FB.auth.signInWithRedirect(pr);else throw e}}
   catch(e){acctMsg(e&&e.code==='auth/popup-closed-by-user'?'Connexion annulée.':(e&&e.code==='auth/operation-not-allowed'?'Google n’est pas encore activé dans Firebase (Authentication > Sign-in method).':e&&e.code==='auth/unauthorized-domain'?'Domaine non autorisé dans Firebase (Authentication > Paramètres).':'Connexion impossible : '+((e&&e.code)||'')+' '+((e&&e.message)||e)))}}
 function acctOverlay(){
-  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 34</p>';
+  const note=(acctNote?`<div class="gps bad" style="margin-bottom:10px">${esc(acctNote)}</div>`:'')+'<p class="st" style="text-align:right;margin:0">version 35</p>';
   let body;
   if(!fbReady())body=`<p>La connexion par compte n’est pas encore activée dans cette installation. Elle demande de créer un projet Firebase gratuit et de coller ses clés dans <b>config.js</b> (guide : <b>AUTH-SETUP.md</b>). En attendant, tout fonctionne sans compte, avec les données sur ton téléphone.</p>`;
   else if(CU)body=`<p>Connecté : <b>${esc(CU.displayName||CU.email||'compte')}</b>${CU.email?'<br><span class="st">'+esc(CU.email)+'</span>':''}</p><p class="st" id="csync">${esc(CS||'☁ Tes données sont sauvegardées et retrouvées sur tes autres appareils.')}</p><button type="button" id="aout" class="dl" style="width:100%">Se déconnecter</button>`;
